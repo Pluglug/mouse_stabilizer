@@ -45,6 +45,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     StabilizerCore_Initialize(&g_stabilizer);
     Settings_Load();
     
+    // Force DEBUG level for troubleshooting
+    Settings_SetLogLevel(LOG_DEBUG);
+    
+    if (!SettingsUI_Initialize()) {
+        LOG_WARN("Failed to initialize settings UI - continuing without settings window");
+    }
+    
     if (!RegisterHotKey(g_hidden_window, HOTKEY_ID, MOD_CONTROL | MOD_ALT, 'S')) {
         LOG_ERROR("Failed to register hotkey Ctrl+Alt+S");
     } else {

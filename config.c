@@ -87,7 +87,7 @@ void Settings_Load(void) {
     
     // Load log level setting
     g_log_level = (LogLevel)GetPrivateProfileInt("Settings", "LogLevel", 
-                                                 LOG_INFO, config_path);
+                                                 LOG_DEBUG, config_path);  // Default to DEBUG for now
     
     if (g_stabilizer.follow_strength < 0.05f) g_stabilizer.follow_strength = 0.05f;
     if (g_stabilizer.follow_strength > 1.0f) g_stabilizer.follow_strength = 1.0f;

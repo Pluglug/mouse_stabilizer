@@ -39,54 +39,18 @@ LRESULT CALLBACK Hotkey_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             return 0;
             
         case WM_COMMAND:
+            LOG_DEBUG("WM_COMMAND received, wParam: %lu", (unsigned long)wParam);
             switch (LOWORD(wParam)) {
-                case 1001:
+                case 1001:  // Toggle Stabilizer
+                    LOG_DEBUG("Toggle Stabilizer command received");
                     Hotkey_ToggleStabilizer();
                     break;
-                case 1002:
-                    if (g_stabilizer.ease_type == EASE_LINEAR) {
-                        g_stabilizer.ease_type = EASE_IN;
-                    } else if (g_stabilizer.ease_type == EASE_IN) {
-                        g_stabilizer.ease_type = EASE_OUT;
-                    } else if (g_stabilizer.ease_type == EASE_OUT) {
-                        g_stabilizer.ease_type = EASE_IN_OUT;
-                    } else {
-                        g_stabilizer.ease_type = EASE_LINEAR;
-                    }
-                    Settings_WriteLog("Ease type changed to: %d", g_stabilizer.ease_type);
-                    Settings_Save();
+                case 1002:  // Settings Window
+                    LOG_DEBUG("Settings Window command received");
+                    SettingsUI_ShowWindow();
+                    LOG_DEBUG("SettingsUI_ShowWindow call completed");
                     break;
-                case 1003:
-                    g_stabilizer.follow_strength += 0.05f;
-                    if (g_stabilizer.follow_strength > 1.0f) {
-                        g_stabilizer.follow_strength = 0.05f;
-                    }
-                    Settings_WriteLog("Follow strength: %.2f", g_stabilizer.follow_strength);
-                    Settings_Save();
-                    break;
-                case 1004:
-                    g_stabilizer.dual_mode = !g_stabilizer.dual_mode;
-                    Settings_WriteLog("Dual mode: %s", g_stabilizer.dual_mode ? "enabled" : "disabled");
-                    Settings_Save();
-                    break;
-                case 1005:
-                    g_stabilizer.delay_start_ms += 50;
-                    if (g_stabilizer.delay_start_ms > 500) {
-                        g_stabilizer.delay_start_ms = 0;
-                    }
-                    Settings_WriteLog("Delay start: %dms", g_stabilizer.delay_start_ms);
-                    Settings_Save();
-                    break;
-                case 1006:
-                    g_stabilizer.target_show_distance += 2.0f;
-                    if (g_stabilizer.target_show_distance > 20.0f) {
-                        g_stabilizer.target_show_distance = 2.0f;
-                    }
-                    Settings_WriteLog("Target show distance: %.1f", g_stabilizer.target_show_distance);
-                    Settings_Save();
-                    break;
-                case 1008:
-                    // Cycle through log levels: ERROR -> WARN -> INFO -> DEBUG -> TRACE -> ERROR
+                case 1003:  // Debug Mode Toggle
                     {
                         LogLevel current = Settings_GetLogLevel();
                         LogLevel next = (LogLevel)((current + 1) % (LOG_TRACE + 1));
@@ -94,7 +58,7 @@ LRESULT CALLBACK Hotkey_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
                         Settings_Save();
                     }
                     break;
-                case 1007:
+                case 1004:  // Exit
                     g_running = false;
                     PostQuitMessage(0);
                     break;

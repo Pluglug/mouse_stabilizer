@@ -40,51 +40,38 @@ void TrayUI_UpdateIcon(void) {
 }
 
 void TrayUI_ShowContextMenu(HWND hwnd) {
+    LOG_DEBUG("Creating context menu");
     HMENU hMenu = CreatePopupMenu();
     POINT pt;
     
-    GetCursorPos(&pt);
+    if (!hMenu) {
+        LOG_ERROR("Failed to create popup menu: error code %lu", GetLastError());
+        return;
+    }
     
+    GetCursorPos(&pt);
+    LOG_DEBUG("Context menu position: (%ld, %ld)", pt.x, pt.y);
+    
+    // Simple tray menu with essential functions only
     const char* toggle_text = g_stabilizer.enabled ? "Disable Stabilizer" : "Enable Stabilizer";
     AppendMenu(hMenu, MF_STRING, 1001, toggle_text);
     
     AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
     
-    const char* ease_names[] = {"Linear", "Ease In", "Ease Out", "Ease In-Out"};
-    char ease_text[256];
-    sprintf_s(ease_text, sizeof(ease_text), "Ease: %s (Click to change)", 
-              ease_names[g_stabilizer.ease_type]);
-    AppendMenu(hMenu, MF_STRING, 1002, ease_text);
+    AppendMenu(hMenu, MF_STRING, 1002, "Settings...");
     
-    char follow_text[256];
-    sprintf_s(follow_text, sizeof(follow_text), "Follow: %.2f (Click to change)", 
-              g_stabilizer.follow_strength);
-    AppendMenu(hMenu, MF_STRING, 1003, follow_text);
-    
-    char dual_text[256];
-    sprintf_s(dual_text, sizeof(dual_text), "Dual Mode: %s (Click to toggle)", 
-              g_stabilizer.dual_mode ? "On" : "Off");
-    AppendMenu(hMenu, MF_STRING, 1004, dual_text);
-    
-    char delay_text[256];
-    sprintf_s(delay_text, sizeof(delay_text), "Delay: %lums (Click to change)", 
-              (unsigned long)g_stabilizer.delay_start_ms);
-    AppendMenu(hMenu, MF_STRING, 1005, delay_text);
-    
-    char distance_text[256];
-    sprintf_s(distance_text, sizeof(distance_text), "Target Distance: %.1f (Click to change)", 
-              g_stabilizer.target_show_distance);
-    AppendMenu(hMenu, MF_STRING, 1006, distance_text);
-    
-    char log_level_text[256];
-    sprintf_s(log_level_text, sizeof(log_level_text), "Log Level: %s (Click to change)", 
+    char debug_text[256];
+    sprintf_s(debug_text, sizeof(debug_text), "Debug Mode: %s", 
               Settings_GetLogLevelName(Settings_GetLogLevel()));
-    AppendMenu(hMenu, MF_STRING, 1008, log_level_text);
+    AppendMenu(hMenu, MF_STRING, 1003, debug_text);
     
     AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
-    AppendMenu(hMenu, MF_STRING, 1007, "Exit");
+    AppendMenu(hMenu, MF_STRING, 1004, "Exit");
     
     SetForegroundWindow(hwnd);
+    LOG_DEBUG("Showing context menu");
     TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, NULL);
+    LOG_DEBUG("Context menu closed");
     DestroyMenu(hMenu);
+    LOG_DEBUG("Context menu destroyed");
 }

@@ -11,6 +11,7 @@
 // User interface
 #include "include/ui/target_pointer.h"
 #include "include/ui/tray_ui.h"
+#include "include/ui/settings_ui.h"
 
 // Configuration and settings
 #include "include/config/settings.h"
