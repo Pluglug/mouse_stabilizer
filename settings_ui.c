@@ -271,11 +271,12 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     }
     SettingsUI_AddTooltip(control, "Controls how quickly the cursor follows the target (0.05-1.0)");
     
-    control = CreateWindow("EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | ES_NUMBER,
+    // Follow Strength value display (read-only)
+    control = CreateWindow("STATIC", "0.15", WS_CHILD | WS_VISIBLE | SS_CENTER | WS_BORDER,
         x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_FOLLOW_EDIT,
         GetModuleHandle(NULL), NULL);
     if (!control) {
-        LOG_ERROR("Failed to create Follow Strength edit");
+        LOG_ERROR("Failed to create Follow Strength display");
         return false;
     }
     SettingsUI_ApplyFont(control);
@@ -329,11 +330,12 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     }
     SettingsUI_AddTooltip(control, "Delay before stabilization starts (0-500ms)");
     
-    control = CreateWindow("EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | ES_NUMBER,
+    // Delay Start value display (read-only)
+    control = CreateWindow("STATIC", "150", WS_CHILD | WS_VISIBLE | SS_CENTER | WS_BORDER,
         x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_DELAY_EDIT,
         GetModuleHandle(NULL), NULL);
     if (!control) {
-        LOG_ERROR("Failed to create Delay Start edit");
+        LOG_ERROR("Failed to create Delay Start display");
         return false;
     }
     SettingsUI_ApplyFont(control);
@@ -669,9 +671,9 @@ void SettingsUI_UpdateControls(void) {
     if (edit) {
         sprintf_s(buffer, sizeof(buffer), "%.2f", g_stabilizer.follow_strength);
         SetWindowText(edit, buffer);
-        LOG_DEBUG("Follow strength edit updated: %s", buffer);
+        LOG_DEBUG("Follow strength display updated: %s", buffer);
     } else {
-        LOG_WARN("Follow strength edit not found");
+        LOG_WARN("Follow strength display not found");
     }
     
     // Update Ease Type
@@ -691,6 +693,9 @@ void SettingsUI_UpdateControls(void) {
     if (edit) {
         sprintf_s(buffer, sizeof(buffer), "%lu", (unsigned long)g_stabilizer.delay_start_ms);
         SetWindowText(edit, buffer);
+        LOG_DEBUG("Delay start display updated: %s", buffer);
+    } else {
+        LOG_WARN("Delay start display not found");
     }
     
     // Update Dual Mode
@@ -759,8 +764,6 @@ void SettingsUI_UpdateControls(void) {
 void SettingsUI_ApplySettings(void) {
     if (!g_settings_window) return;
     
-    char buffer[64];
-    
     // Apply Enable/Disable setting
     HWND enable_check = GetDlgItem(g_settings_window, IDC_ENABLE_CHECK);
     if (enable_check) {
@@ -773,18 +776,14 @@ void SettingsUI_ApplySettings(void) {
         }
     }
     
-    // Apply Follow Strength - check edit field first, then slider
-    HWND edit = GetDlgItem(g_settings_window, IDC_FOLLOW_EDIT);
-    if (edit && GetWindowText(edit, buffer, sizeof(buffer)) > 0) {
-        float value = (float)atof(buffer);
-        if (value >= 0.05f && value <= 1.0f) {
-            g_stabilizer.follow_strength = value;
-        }
-    } else {
-        HWND slider = GetDlgItem(g_settings_window, IDC_FOLLOW_SLIDER);
-        if (slider) {
-            int pos = (int)SendMessage(slider, TBM_GETPOS, 0, 0);
-            g_stabilizer.follow_strength = pos / 100.0f;
+    // Apply Follow Strength from slider only
+    HWND follow_slider = GetDlgItem(g_settings_window, IDC_FOLLOW_SLIDER);
+    if (follow_slider) {
+        int slider_value = (int)SendMessage(follow_slider, TBM_GETPOS, 0, 0);
+        float new_strength = slider_value / 100.0f;
+        if (new_strength >= 0.05f && new_strength <= 1.0f && new_strength != g_stabilizer.follow_strength) {
+            g_stabilizer.follow_strength = new_strength;
+            LOG_DEBUG("Follow strength changed to: %.2f", g_stabilizer.follow_strength);
         }
     }
     
@@ -808,17 +807,13 @@ void SettingsUI_ApplySettings(void) {
         }
     }
     
-    // Apply Delay - check edit field first, then slider
-    edit = GetDlgItem(g_settings_window, IDC_DELAY_EDIT);
-    if (edit && GetWindowText(edit, buffer, sizeof(buffer)) > 0) {
-        int value = atoi(buffer);
-        if (value >= 0 && value <= 500) {
-            g_stabilizer.delay_start_ms = (DWORD)value;
-        }
-    } else {
-        HWND slider = GetDlgItem(g_settings_window, IDC_DELAY_SLIDER);
-        if (slider) {
-            g_stabilizer.delay_start_ms = (DWORD)SendMessage(slider, TBM_GETPOS, 0, 0);
+    // Apply Delay from slider only
+    HWND delay_slider = GetDlgItem(g_settings_window, IDC_DELAY_SLIDER);
+    if (delay_slider) {
+        DWORD slider_value = (DWORD)SendMessage(delay_slider, TBM_GETPOS, 0, 0);
+        if (slider_value <= 500 && slider_value != g_stabilizer.delay_start_ms) {
+            g_stabilizer.delay_start_ms = slider_value;
+            LOG_DEBUG("Delay start changed to: %lums", (unsigned long)g_stabilizer.delay_start_ms);
         }
     }
     
