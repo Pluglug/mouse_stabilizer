@@ -1,58 +1,79 @@
-# Mouse Stabilizer for Presentations
+# Mouse Stabilizer
 
-Windows用のプレゼンテーション特化マウススタビライザーです。手ブレを除去しながら、意図的な動作は一切邪魔しません。
+Windows application providing paint-style cursor smoothing for presentations and precise work. Reduces hand tremor effects while maintaining natural mouse control.
 
-## 特徴
+## Features
 
-- **適応的スムージング**: 微細な手ブレのみを除去し、意図的な動きは素通し
-- **3種類のフィルター**: 移動平均、指数平滑、カルマンフィルターから選択
-- **ホットキー制御**: Ctrl+Alt+Sで瞬時にON/OFF切り替え
-- **システムトレイ**: バックグラウンド動作でリアルタイム設定変更
-- **高精度制御**: Raw Input APIによる低遅延処理
+- **Paint-style Following**: Cursor smoothly follows target position like drawing software
+- **Configurable Easing**: Linear, Ease In, Ease Out, Ease In-Out smoothing curves  
+- **Visual Feedback**: Optional red target pointer shows actual mouse position
+- **Delay Start**: Configurable delay before smoothing begins (0-500ms)
+- **Dual Mode**: Adaptive smoothing that responds to movement velocity
+- **Hotkey Toggle**: Ctrl+Alt+S to instantly enable/disable
+- **System Tray Control**: Right-click for real-time setting adjustments
+- **High Precision**: Raw Input API for low-latency processing
 
-## コンパイル方法
+## Quick Start
 
-### MinGW-w64使用（推奨）
+1. **Compile**: `make` (requires MinGW or MSVC)
+2. **Run**: `mouse_stabilizer.exe`  
+3. **Toggle**: Press `Ctrl+Alt+S` or right-click tray icon
+4. **Configure**: Right-click tray icon for settings menu
+
+## Build Methods
+
+### MinGW-w64 (Recommended)
 ```bash
 make
 ```
 
-### Visual Studio使用
+### Visual Studio
 ```bash
-cl main.c mouse_input.c filters.c hotkey.c tray_ui.c config.c /Fe:mouse_stabilizer.exe user32.lib kernel32.lib shell32.lib
+cl main.c mouse_input.c smooth_engine.c hotkey.c tray_ui.c target_pointer.c config.c /Fe:mouse_stabilizer.exe user32.lib kernel32.lib shell32.lib gdi32.lib
 ```
 
-## 使用方法
+## Key Settings
 
-1. `mouse_stabilizer.exe`を実行
-2. システムトレイにアイコンが表示されます
-3. `Ctrl+Alt+S`で有効/無効を切り替え
-4. トレイアイコンを右クリックで設定メニュー
+- **Follow Strength** (0.05-1.0): How quickly cursor follows target
+- **Ease Type**: Smoothing curve (Linear/Ease In/Out/In-Out)  
+- **Delay Start** (0-500ms): Wait time before following starts
+- **Dual Mode**: Enable faster following for quick movements
+- **Target Distance** (2-20px): Threshold for showing target pointer
 
-## 設定パラメータ
+## Recommended Configurations
 
-- **スムージング強度** (0.1-1.0): 値が小さいほど強いスムージング
-- **反応閾値** (1.0-20.0): 意図的動きの検出感度
-- **フィルタ種別**:
-  - 移動平均: 安定性重視
-  - 指数平滑: バランス型（デフォルト）
-  - カルマン: 高精度予測
+- **Presentations**: Follow 0.1, Ease In-Out, Delay 150ms
+- **Drawing/Design**: Follow 0.15, Ease Out, Delay 100ms  
+- **General Use**: Follow 0.2, Linear, Delay 50ms
 
-## 技術仕様
+## Technical Specifications
 
-- Windows 7以降対応
-- CPU使用率: < 1%
-- メモリ使用量: < 5MB
-- 遅延: < 1ms
-- ログファイル: `mouse_stabilizer.log`
-- 設定ファイル: `mouse_stabilizer.ini`
+- **Compatibility**: Windows 7+ (x86/x64)
+- **CPU Usage**: < 1%
+- **Memory Usage**: < 5MB  
+- **Latency**: < 8ms (configurable update interval)
+- **Architecture**: Modular C codebase with separated concerns
 
-## トラブルシューティング
+## Generated Files
 
-- **管理者権限が必要**: UACが有効な環境では管理者として実行
-- **ホットキーが効かない**: 他のアプリケーションと競合している可能性
-- **フィルターが効かない**: 閾値を下げて感度を上げてください
+- `mouse_stabilizer.ini` - Settings (auto-created)
+- `mouse_stabilizer.log` - Debug log (auto-created)
 
-## ライセンス
+## Troubleshooting
 
-MIT License
+- **Admin Rights Required**: Run as administrator if UAC is enabled
+- **Hotkey Not Working**: Check for conflicts with other applications
+- **No Smoothing Effect**: Increase Follow Strength or decrease Delay
+- **Target Pointer Not Visible**: Decrease Target Distance threshold
+
+## Architecture
+
+- **Core Engine**: `smooth_engine.c` - Mathematical smoothing algorithms
+- **Input Processing**: `mouse_input.c` - Raw Input API handling
+- **UI Components**: `tray_ui.c`, `target_pointer.c` - User interface
+- **Configuration**: `config.c` - Settings persistence and logging
+- **Main Loop**: `main.c` - Application initialization and message loop
+
+## License
+
+See source code for licensing information.

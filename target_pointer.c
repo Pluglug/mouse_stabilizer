@@ -1,6 +1,14 @@
+/**
+ * Target Pointer - Visual Feedback Overlay
+ * 
+ * Creates a semi-transparent red circle overlay that shows the actual
+ * mouse position (target) that the cursor is smoothly following towards.
+ */
+
 #include "mouse_stabilizer.h"
-static bool g_target_visible = false;
-static DWORD g_last_draw_time = 0;
+
+static bool g_target_visible = false;  // Current visibility state
+static DWORD g_last_draw_time = 0;     // Throttle drawing updates
 
 bool TargetPointer_CreateWindow(void) {
     const char* class_name = "MouseStabilizerTarget";

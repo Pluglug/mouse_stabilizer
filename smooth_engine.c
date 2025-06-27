@@ -1,10 +1,18 @@
+/**
+ * Mouse Stabilizer - Core Engine
+ * 
+ * Implements paint-style following smoothing where the Windows cursor
+ * smoothly follows a target position with configurable delay and easing.
+ */
+
 #include "mouse_stabilizer.h"
 
-SmoothStabilizer g_stabilizer = {0};
-HWND g_hidden_window = NULL;
-HWND g_target_window = NULL;
-NOTIFYICONDATA g_nid = {0};
-bool g_running = true;
+// Global application state
+SmoothStabilizer g_stabilizer = {0};  // Main stabilizer instance
+HWND g_hidden_window = NULL;          // Hidden window for message handling
+HWND g_target_window = NULL;          // Overlay window for target pointer
+NOTIFYICONDATA g_nid = {0};          // System tray icon data
+bool g_running = true;                // Application running flag
 
 void StabilizerCore_Initialize(SmoothStabilizer* stabilizer) {
     POINT current_pos;
@@ -80,6 +88,10 @@ float StabilizerCore_CalculateVelocity(SmoothStabilizer* stabilizer, MousePos ne
     return stabilizer->velocity;
 }
 
+/**
+ * Update cursor position with smooth following behavior
+ * Core function that moves Windows cursor towards target with easing
+ */
 void StabilizerCore_UpdatePosition(SmoothStabilizer* stabilizer) {
     if (!stabilizer->enabled) return;
     
@@ -97,15 +109,16 @@ void StabilizerCore_UpdatePosition(SmoothStabilizer* stabilizer) {
         stabilizer->is_moving = true;
     }
     
+    // Implement delay start - wait before beginning to follow
     DWORD elapsed_since_start = current_time - stabilizer->movement_start_time;
     if (elapsed_since_start < stabilizer->delay_start_ms) {
         return;
     }
     
+    // Calculate follow strength with optional velocity adaptation
     float follow_factor = stabilizer->follow_strength;
-    
     if (stabilizer->dual_mode && stabilizer->velocity > 100.0f) {
-        follow_factor = fminf(stabilizer->follow_strength * 3.0f, 0.8f);
+        follow_factor = fminf(stabilizer->follow_strength * 3.0f, 0.8f);  // Faster following for quick movements
     }
     
     float eased_factor = StabilizerCore_ApplyEasing(follow_factor, stabilizer->ease_type);
@@ -146,12 +159,17 @@ void StabilizerCore_SetTargetPosition(SmoothStabilizer* stabilizer, float x, flo
     stabilizer->target_pos.y = y;
 }
 
+/**
+ * Process raw mouse movement delta from Windows Raw Input
+ * Updates target position that the cursor will smoothly follow
+ */
 void StabilizerCore_AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float dy) {
     if (!stabilizer->enabled) {
         return;
     }
     
     
+    // Initialize positions on first update
     if (stabilizer->first_update) {
         POINT current_cursor;
         GetCursorPos(&current_cursor);

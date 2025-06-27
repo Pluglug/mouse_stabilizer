@@ -1,3 +1,14 @@
+/**
+ * Mouse Stabilizer - Main Application Entry Point
+ * 
+ * Initializes Windows application components:
+ * - Hidden window for message handling
+ * - System tray icon and context menu
+ * - Raw input registration for mouse capture
+ * - Hotkey registration (Ctrl+Alt+S)
+ * - Target pointer overlay window
+ */
+
 #include "mouse_stabilizer.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {

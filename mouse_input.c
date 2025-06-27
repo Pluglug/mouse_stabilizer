@@ -1,7 +1,14 @@
+/**
+ * Mouse Input Processing - Raw Input API Integration
+ * 
+ * Handles Windows Raw Input registration and processing to capture
+ * high-precision mouse movement deltas before Windows applies acceleration.
+ */
+
 #include "mouse_stabilizer.h"
 
-static bool g_in_stabilizer_update = false;
-static RAWINPUTDEVICE g_rid[1];
+static bool g_in_stabilizer_update = false;  // Prevent infinite recursion
+static RAWINPUTDEVICE g_rid[1];              // Raw input device registration
 
 bool MouseInput_RegisterRawInput(void) {
     g_rid[0].usUsagePage = 0x01;
