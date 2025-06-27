@@ -44,7 +44,8 @@ bool TargetPointer_CreateWindow(void) {
         return false;
     }
     
-    if (!SetLayeredWindowAttributes(g_target_window, RGB(0, 0, 0), g_stabilizer.target_alpha, LWA_ALPHA)) {
+    // Set transparent background using magenta as the transparent color
+    if (!SetLayeredWindowAttributes(g_target_window, RGB(255, 0, 255), g_stabilizer.target_alpha, LWA_COLORKEY | LWA_ALPHA)) {
         DWORD error = GetLastError();
         LOG_WARN("Failed to set layered window attributes: error code %lu", error);
         // Continue anyway, window will still function
@@ -102,6 +103,11 @@ LRESULT CALLBACK TargetPointer_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
             
             RECT rect;
             GetClientRect(hwnd, &rect);
+            
+            // Fill background with transparent color (magenta)
+            HBRUSH transparent_brush = CreateSolidBrush(RGB(255, 0, 255));
+            FillRect(hdc, &rect, transparent_brush);
+            DeleteObject(transparent_brush);
             
             int center_x = rect.right / 2;
             int center_y = rect.bottom / 2;
