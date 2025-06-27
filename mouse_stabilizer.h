@@ -7,61 +7,74 @@
 #include <stdio.h>
 #include <time.h>
 
-#define MAX_BUFFER_SIZE 32
-#define DEFAULT_SMOOTHING_STRENGTH 0.3f
-#define DEFAULT_THRESHOLD 5.0f
+#define UPDATE_INTERVAL_MS 8
+#define DRAW_INTERVAL_MS 16
+#define DEFAULT_FOLLOW_STRENGTH 0.15f
+#define DEFAULT_MIN_DISTANCE 0.5f
+#define DEFAULT_DELAY_START_MS 150
+#define DEFAULT_TARGET_SHOW_DISTANCE 5.0f
+#define DEFAULT_TARGET_SIZE 8
+#define DEFAULT_TARGET_ALPHA 180
 #define HOTKEY_ID 1
 #define TRAY_ICON_ID 1
 #define WM_TRAYICON (WM_USER + 1)
+#define WM_UPDATE_TIMER (WM_USER + 2)
+#define WM_DRAW_TIMER (WM_USER + 3)
+#define TIMER_ID 1
+#define DRAW_TIMER_ID 2
 
 typedef enum {
-    FILTER_MOVING_AVERAGE,
-    FILTER_EXPONENTIAL,
-    FILTER_KALMAN
-} FilterType;
+    EASE_LINEAR,
+    EASE_IN,
+    EASE_OUT,
+    EASE_IN_OUT
+} EaseType;
 
 typedef struct {
     float x, y;
-    DWORD timestamp;
-} MousePoint;
+} MousePos;
 
 typedef struct {
-    MousePoint buffer[MAX_BUFFER_SIZE];
-    int head;
-    int count;
-    float smoothing_strength;
-    float threshold;
-    FilterType filter_type;
+    MousePos target_pos;
+    MousePos current_pos;
+    float follow_strength;
+    float min_distance;
+    EaseType ease_type;
+    bool dual_mode;
     bool enabled;
-    MousePoint last_output;
-    float velocity_x, velocity_y;
-    float accel_x, accel_y;
-} MouseStabilizer;
+    
+    float velocity;
+    DWORD last_update_time;
+    DWORD movement_start_time;
+    bool first_update;
+    bool is_moving;
+    
+    DWORD delay_start_ms;
+    float target_show_distance;
+    int target_size;
+    int target_alpha;
+    COLORREF target_color;
+} SmoothStabilizer;
 
-typedef struct {
-    float x, y;
-    float p_x, p_y;
-    float q;
-    float r;
-} KalmanFilter;
-
-extern MouseStabilizer g_stabilizer;
-extern KalmanFilter g_kalman_x, g_kalman_y;
+extern SmoothStabilizer g_stabilizer;
 extern HWND g_hidden_window;
+extern HWND g_target_window;
 extern NOTIFYICONDATA g_nid;
 extern bool g_running;
 
-void InitializeStabilizer(MouseStabilizer* stabilizer);
-void InitializeKalman(KalmanFilter* kf, float q, float r);
-float KalmanUpdate(KalmanFilter* kf, float measurement);
-void AddMousePoint(MouseStabilizer* stabilizer, float x, float y);
-void CalculateVelocityAcceleration(MouseStabilizer* stabilizer);
-bool IsIntentionalMovement(const MouseStabilizer* stabilizer);
-MousePoint ApplyFilter(const MouseStabilizer* stabilizer);
-MousePoint MovingAverageFilter(const MouseStabilizer* stabilizer);
-MousePoint ExponentialFilter(const MouseStabilizer* stabilizer);
-MousePoint KalmanFilter_Apply(const MouseStabilizer* stabilizer);
-void ProcessMouseInput(const RAWMOUSE* mouse_data);
+void InitializeStabilizer(SmoothStabilizer* stabilizer);
+float ApplyEasing(float t, EaseType ease_type);
+float CalculateDistance(MousePos a, MousePos b);
+float CalculateVelocity(SmoothStabilizer* stabilizer, MousePos new_target);
+void UpdateSmoothPosition(SmoothStabilizer* stabilizer);
+void SetTargetPosition(SmoothStabilizer* stabilizer, float x, float y);
+void AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float dy);
+bool RegisterRawInput(void);
+void ProcessRawInput(LPARAM lParam);
+bool CreateTargetWindow(void);
+void UpdateTargetWindow(void);
+void ShowTargetPointer(bool show);
+LRESULT CALLBACK TargetWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 bool CreateTrayIcon(HWND hwnd);

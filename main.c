@@ -34,9 +34,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     InitializeStabilizer(&g_stabilizer);
     LoadSettings();
     
-    InitializeKalman(&g_kalman_x, 0.01f, 0.1f);
-    InitializeKalman(&g_kalman_y, 0.01f, 0.1f);
-    
     if (!RegisterHotKey(g_hidden_window, HOTKEY_ID, MOD_CONTROL | MOD_ALT, 'S')) {
         WriteLog("Failed to register hotkey Ctrl+Alt+S");
     } else {
@@ -49,6 +46,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         WriteLog("Tray icon created successfully");
     }
     
+    if (!SetTimer(g_hidden_window, TIMER_ID, UPDATE_INTERVAL_MS, NULL)) {
+        WriteLog("Failed to create update timer");
+    } else {
+        WriteLog("Update timer created successfully (interval: %dms)", UPDATE_INTERVAL_MS);
+    }
+    
+    if (!SetTimer(g_hidden_window, DRAW_TIMER_ID, DRAW_INTERVAL_MS, NULL)) {
+        WriteLog("Failed to create draw timer");
+    } else {
+        WriteLog("Draw timer created successfully (interval: %dms)", DRAW_INTERVAL_MS);
+    }
+    
+    if (!CreateTargetWindow()) {
+        WriteLog("Failed to create target window - continuing without target pointer");
+    }
+    
+    if (!RegisterRawInput()) {
+        WriteLog("Failed to register raw input - using fallback method");
+    }
+    
     mouse_hook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, hInstance, 0);
     if (!mouse_hook) {
         WriteLog("Failed to install mouse hook");
@@ -58,8 +75,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         WriteLog("Mouse hook installed successfully");
     }
     
-    WriteLog("Mouse Stabilizer started - Filter: %d, Smoothing: %.2f, Threshold: %.1f, Enabled: %s",
-             g_stabilizer.filter_type, g_stabilizer.smoothing_strength, g_stabilizer.threshold,
+    WriteLog("Mouse Stabilizer started - Follow: %.2f, MinDist: %.1f, Ease: %d, Dual: %s, Delay: %dms, Enabled: %s",
+             g_stabilizer.follow_strength, g_stabilizer.min_distance, g_stabilizer.ease_type,
+             g_stabilizer.dual_mode ? "true" : "false", g_stabilizer.delay_start_ms, 
              g_stabilizer.enabled ? "true" : "false");
     
     UpdateTrayIcon();
@@ -74,6 +92,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         WriteLog("Mouse hook uninstalled");
     }
     
+    KillTimer(g_hidden_window, TIMER_ID);
+    KillTimer(g_hidden_window, DRAW_TIMER_ID);
+    if (g_target_window) {
+        DestroyWindow(g_target_window);
+    }
     UnregisterHotKey(g_hidden_window, HOTKEY_ID);
     Shell_NotifyIcon(NIM_DELETE, &g_nid);
     SaveSettings();

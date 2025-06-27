@@ -1,8 +1,6 @@
 #include "mouse_stabilizer.h"
 #include <shellapi.h>
 
-NOTIFYICONDATA g_nid = {0};
-
 bool CreateTrayIcon(HWND hwnd) {
     g_nid.cbSize = sizeof(NOTIFYICONDATA);
     g_nid.hWnd = hwnd;
@@ -17,23 +15,26 @@ bool CreateTrayIcon(HWND hwnd) {
 
 void UpdateTrayIcon(void) {
     const char* status = g_stabilizer.enabled ? "Enabled" : "Disabled";
-    const char* filter_name = "";
+    const char* ease_name = "";
     
-    switch (g_stabilizer.filter_type) {
-        case FILTER_MOVING_AVERAGE:
-            filter_name = "Moving Average";
+    switch (g_stabilizer.ease_type) {
+        case EASE_LINEAR:
+            ease_name = "Linear";
             break;
-        case FILTER_EXPONENTIAL:
-            filter_name = "Exponential";
+        case EASE_IN:
+            ease_name = "Ease In";
             break;
-        case FILTER_KALMAN:
-            filter_name = "Kalman";
+        case EASE_OUT:
+            ease_name = "Ease Out";
+            break;
+        case EASE_IN_OUT:
+            ease_name = "Ease In-Out";
             break;
     }
     
     sprintf_s(g_nid.szTip, sizeof(g_nid.szTip), 
-              "Mouse Stabilizer - %s\nFilter: %s\nSmoothing: %.1f\nThreshold: %.1f",
-              status, filter_name, g_stabilizer.smoothing_strength, g_stabilizer.threshold);
+              "Mouse Stabilizer - %s\nEase: %s\nFollow: %.2f\nDelay: %dms",
+              status, ease_name, g_stabilizer.follow_strength, g_stabilizer.delay_start_ms);
     
     Shell_NotifyIcon(NIM_MODIFY, &g_nid);
 }
@@ -49,24 +50,34 @@ void ShowContextMenu(HWND hwnd) {
     
     AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
     
-    const char* filter_names[] = {"Moving Average", "Exponential", "Kalman"};
-    char filter_text[256];
-    sprintf_s(filter_text, sizeof(filter_text), "Filter: %s (Click to change)", 
-              filter_names[g_stabilizer.filter_type]);
-    AppendMenu(hMenu, MF_STRING, 1002, filter_text);
+    const char* ease_names[] = {"Linear", "Ease In", "Ease Out", "Ease In-Out"};
+    char ease_text[256];
+    sprintf_s(ease_text, sizeof(ease_text), "Ease: %s (Click to change)", 
+              ease_names[g_stabilizer.ease_type]);
+    AppendMenu(hMenu, MF_STRING, 1002, ease_text);
     
-    char smoothing_text[256];
-    sprintf_s(smoothing_text, sizeof(smoothing_text), "Smoothing: %.1f (Click to change)", 
-              g_stabilizer.smoothing_strength);
-    AppendMenu(hMenu, MF_STRING, 1003, smoothing_text);
+    char follow_text[256];
+    sprintf_s(follow_text, sizeof(follow_text), "Follow: %.2f (Click to change)", 
+              g_stabilizer.follow_strength);
+    AppendMenu(hMenu, MF_STRING, 1003, follow_text);
     
-    char threshold_text[256];
-    sprintf_s(threshold_text, sizeof(threshold_text), "Threshold: %.1f (Click to change)", 
-              g_stabilizer.threshold);
-    AppendMenu(hMenu, MF_STRING, 1004, threshold_text);
+    char dual_text[256];
+    sprintf_s(dual_text, sizeof(dual_text), "Dual Mode: %s (Click to toggle)", 
+              g_stabilizer.dual_mode ? "On" : "Off");
+    AppendMenu(hMenu, MF_STRING, 1004, dual_text);
+    
+    char delay_text[256];
+    sprintf_s(delay_text, sizeof(delay_text), "Delay: %dms (Click to change)", 
+              g_stabilizer.delay_start_ms);
+    AppendMenu(hMenu, MF_STRING, 1005, delay_text);
+    
+    char distance_text[256];
+    sprintf_s(distance_text, sizeof(distance_text), "Target Distance: %.1f (Click to change)", 
+              g_stabilizer.target_show_distance);
+    AppendMenu(hMenu, MF_STRING, 1006, distance_text);
     
     AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
-    AppendMenu(hMenu, MF_STRING, 1005, "Exit");
+    AppendMenu(hMenu, MF_STRING, 1007, "Exit");
     
     SetForegroundWindow(hwnd);
     TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, hwnd, NULL);

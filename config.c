@@ -53,30 +53,51 @@ void LoadSettings(void) {
         strcpy(last_slash + 1, "mouse_stabilizer.ini");
     }
     
-    g_stabilizer.smoothing_strength = (float)GetPrivateProfileInt("Settings", "SmoothingStrength", 
-                                                                  (int)(DEFAULT_SMOOTHING_STRENGTH * 100), 
-                                                                  config_path) / 100.0f;
+    g_stabilizer.follow_strength = (float)GetPrivateProfileInt("Settings", "FollowStrength", 
+                                                               (int)(DEFAULT_FOLLOW_STRENGTH * 100), 
+                                                               config_path) / 100.0f;
     
-    g_stabilizer.threshold = (float)GetPrivateProfileInt("Settings", "Threshold", 
-                                                         (int)(DEFAULT_THRESHOLD * 10), 
-                                                         config_path) / 10.0f;
+    g_stabilizer.min_distance = (float)GetPrivateProfileInt("Settings", "MinDistance", 
+                                                            (int)(DEFAULT_MIN_DISTANCE * 10), 
+                                                            config_path) / 10.0f;
     
-    g_stabilizer.filter_type = (FilterType)GetPrivateProfileInt("Settings", "FilterType", 
-                                                                FILTER_EXPONENTIAL, config_path);
+    g_stabilizer.ease_type = (EaseType)GetPrivateProfileInt("Settings", "EaseType", 
+                                                            EASE_OUT, config_path);
     
+    g_stabilizer.dual_mode = GetPrivateProfileInt("Settings", "DualMode", 1, config_path) != 0;
     g_stabilizer.enabled = GetPrivateProfileInt("Settings", "Enabled", 1, config_path) != 0;
     
-    if (g_stabilizer.smoothing_strength < 0.1f) g_stabilizer.smoothing_strength = 0.1f;
-    if (g_stabilizer.smoothing_strength > 1.0f) g_stabilizer.smoothing_strength = 1.0f;
-    if (g_stabilizer.threshold < 1.0f) g_stabilizer.threshold = 1.0f;
-    if (g_stabilizer.threshold > 20.0f) g_stabilizer.threshold = 20.0f;
-    if (g_stabilizer.filter_type < 0 || g_stabilizer.filter_type > 2) {
-        g_stabilizer.filter_type = FILTER_EXPONENTIAL;
-    }
+    g_stabilizer.delay_start_ms = GetPrivateProfileInt("Settings", "DelayStartMs", 
+                                                       DEFAULT_DELAY_START_MS, config_path);
+    g_stabilizer.target_show_distance = (float)GetPrivateProfileInt("Settings", "TargetShowDistance", 
+                                                                    (int)(DEFAULT_TARGET_SHOW_DISTANCE * 10), 
+                                                                    config_path) / 10.0f;
+    g_stabilizer.target_size = GetPrivateProfileInt("Settings", "TargetSize", 
+                                                    DEFAULT_TARGET_SIZE, config_path);
+    g_stabilizer.target_alpha = GetPrivateProfileInt("Settings", "TargetAlpha", 
+                                                     DEFAULT_TARGET_ALPHA, config_path);
+    g_stabilizer.target_color = GetPrivateProfileInt("Settings", "TargetColor", 
+                                                     RGB(255, 100, 100), config_path);
     
-    WriteLog("Settings loaded - Smoothing: %.2f, Threshold: %.1f, Filter: %d, Enabled: %s",
-             g_stabilizer.smoothing_strength, g_stabilizer.threshold, g_stabilizer.filter_type,
-             g_stabilizer.enabled ? "true" : "false");
+    if (g_stabilizer.follow_strength < 0.05f) g_stabilizer.follow_strength = 0.05f;
+    if (g_stabilizer.follow_strength > 1.0f) g_stabilizer.follow_strength = 1.0f;
+    if (g_stabilizer.min_distance < 0.1f) g_stabilizer.min_distance = 0.1f;
+    if (g_stabilizer.min_distance > 5.0f) g_stabilizer.min_distance = 5.0f;
+    if (g_stabilizer.ease_type < 0 || g_stabilizer.ease_type > 3) {
+        g_stabilizer.ease_type = EASE_OUT;
+    }
+    if (g_stabilizer.delay_start_ms > 1000) g_stabilizer.delay_start_ms = 1000;
+    if (g_stabilizer.target_show_distance < 1.0f) g_stabilizer.target_show_distance = 1.0f;
+    if (g_stabilizer.target_show_distance > 50.0f) g_stabilizer.target_show_distance = 50.0f;
+    if (g_stabilizer.target_size < 3) g_stabilizer.target_size = 3;
+    if (g_stabilizer.target_size > 20) g_stabilizer.target_size = 20;
+    if (g_stabilizer.target_alpha < 50) g_stabilizer.target_alpha = 50;
+    if (g_stabilizer.target_alpha > 255) g_stabilizer.target_alpha = 255;
+    
+    WriteLog("Settings loaded - Follow: %.2f, Ease: %d, Dual: %s, Delay: %dms, TargetDist: %.1f, Enabled: %s",
+             g_stabilizer.follow_strength, g_stabilizer.ease_type,
+             g_stabilizer.dual_mode ? "true" : "false", g_stabilizer.delay_start_ms,
+             g_stabilizer.target_show_distance, g_stabilizer.enabled ? "true" : "false");
 }
 
 void SaveSettings(void) {
@@ -89,17 +110,35 @@ void SaveSettings(void) {
     
     char buffer[32];
     
-    sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.smoothing_strength * 100));
-    WritePrivateProfileString("Settings", "SmoothingStrength", buffer, config_path);
+    sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.follow_strength * 100));
+    WritePrivateProfileString("Settings", "FollowStrength", buffer, config_path);
     
-    sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.threshold * 10));
-    WritePrivateProfileString("Settings", "Threshold", buffer, config_path);
+    sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.min_distance * 10));
+    WritePrivateProfileString("Settings", "MinDistance", buffer, config_path);
     
-    sprintf_s(buffer, sizeof(buffer), "%d", (int)g_stabilizer.filter_type);
-    WritePrivateProfileString("Settings", "FilterType", buffer, config_path);
+    sprintf_s(buffer, sizeof(buffer), "%d", (int)g_stabilizer.ease_type);
+    WritePrivateProfileString("Settings", "EaseType", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.dual_mode ? 1 : 0);
+    WritePrivateProfileString("Settings", "DualMode", buffer, config_path);
     
     sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.enabled ? 1 : 0);
     WritePrivateProfileString("Settings", "Enabled", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.delay_start_ms);
+    WritePrivateProfileString("Settings", "DelayStartMs", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.target_show_distance * 10));
+    WritePrivateProfileString("Settings", "TargetShowDistance", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.target_size);
+    WritePrivateProfileString("Settings", "TargetSize", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.target_alpha);
+    WritePrivateProfileString("Settings", "TargetAlpha", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", (int)g_stabilizer.target_color);
+    WritePrivateProfileString("Settings", "TargetColor", buffer, config_path);
     
     WriteLog("Settings saved");
 }

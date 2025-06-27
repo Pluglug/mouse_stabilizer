@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -std=c99
-LIBS = -luser32 -lkernel32 -lshell32
+LIBS = -luser32 -lkernel32 -lshell32 -lgdi32
 TARGET = mouse_stabilizer.exe
-SOURCES = main.c mouse_input.c filters.c hotkey.c tray_ui.c config.c
+SOURCES = main.c mouse_input.c smooth_engine.c target_pointer.c hotkey.c tray_ui.c config.c
 OBJECTS = $(SOURCES:.c=.o)
 
 .PHONY: all clean install
