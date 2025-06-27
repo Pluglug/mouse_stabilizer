@@ -91,6 +91,12 @@ void Settings_Load(void) {
     g_log_level = (LogLevel)GetPrivateProfileInt("Settings", "LogLevel", 
                                                  LOG_DEBUG, config_path);  // Default to DEBUG for now
     
+    // Load capture exclusion settings
+    g_stabilizer.exclude_from_capture = GetPrivateProfileInt("Settings", "ExcludeFromCapture", 
+                                                             DEFAULT_EXCLUDE_FROM_CAPTURE ? 1 : 0, config_path) != 0;
+    g_stabilizer.capture_compatibility_mode = GetPrivateProfileInt("Settings", "CaptureCompatibilityMode", 
+                                                                   DEFAULT_CAPTURE_COMPATIBILITY_MODE ? 1 : 0, config_path) != 0;
+    
     if (g_stabilizer.follow_strength < 0.05f) g_stabilizer.follow_strength = 0.05f;
     if (g_stabilizer.follow_strength > 1.0f) g_stabilizer.follow_strength = 1.0f;
     if (g_stabilizer.min_distance < 0.1f) g_stabilizer.min_distance = 0.1f;
@@ -161,6 +167,12 @@ void Settings_Save(void) {
     
     sprintf_s(buffer, sizeof(buffer), "%d", (int)g_log_level);
     WritePrivateProfileString("Settings", "LogLevel", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.exclude_from_capture ? 1 : 0);
+    WritePrivateProfileString("Settings", "ExcludeFromCapture", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.capture_compatibility_mode ? 1 : 0);
+    WritePrivateProfileString("Settings", "CaptureCompatibilityMode", buffer, config_path);
     
     Settings_WriteLog("Settings saved");
 }

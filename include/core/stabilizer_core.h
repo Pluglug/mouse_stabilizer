@@ -54,6 +54,10 @@ typedef struct {
     int target_size;            // Target pointer size
     int target_alpha;           // Target pointer transparency
     COLORREF target_color;      // Target pointer color
+    
+    // Screen capture exclusion settings
+    bool exclude_from_capture;      // Exclude target pointer from screen capture
+    bool capture_compatibility_mode; // Use compatibility mode for older capture software
 } SmoothStabilizer;
 
 // Global stabilizer instance

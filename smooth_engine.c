@@ -50,6 +50,11 @@ void StabilizerCore_Initialize(SmoothStabilizer* stabilizer) {
     stabilizer->target_size = DEFAULT_TARGET_SIZE;
     stabilizer->target_alpha = DEFAULT_TARGET_ALPHA;
     stabilizer->target_color = RGB(255, 100, 100);
+    stabilizer->pointer_type = DEFAULT_POINTER_TYPE;
+    
+    // Initialize capture exclusion settings
+    stabilizer->exclude_from_capture = DEFAULT_EXCLUDE_FROM_CAPTURE;
+    stabilizer->capture_compatibility_mode = DEFAULT_CAPTURE_COMPATIBILITY_MODE;
     
     Settings_WriteLog("Stabilizer initialized at position (%.1f, %.1f)", 
              stabilizer->current_pos.x, stabilizer->current_pos.y);

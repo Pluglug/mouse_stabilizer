@@ -35,9 +35,12 @@
 #define IDC_LOG_LEVEL_COMBO     2016
 #define IDC_PRESET_COMBO        2017
 #define IDC_APPLY_PRESET        2018
+#define IDC_EXCLUDE_CAPTURE_CHECK 2019
+#define IDC_CAPTURE_COMPAT_CHECK  2020
+#define IDC_CAPTURE_STATUS_LABEL  2021
 
 // Tooltip control ID
-#define IDC_TOOLTIP             2019
+#define IDC_TOOLTIP             2022
 
 // Tab indices
 #define TAB_BASIC       0

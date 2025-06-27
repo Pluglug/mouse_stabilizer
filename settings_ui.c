@@ -437,6 +437,34 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     }
     SettingsUI_AddTooltip(control, "Transparency of target pointer (50-255)");
     
+    y_pos += CONTROL_SPACING;
+    
+    // Exclude from Capture
+    control = CreateWindow("BUTTON", "Exclude from screen capture (OBS, etc.)",
+        WS_CHILD | BS_AUTOCHECKBOX,
+        x_label, y_pos, LABEL_WIDTH + CONTROL_WIDTH, CONTROL_HEIGHT, parent, (HMENU)IDC_EXCLUDE_CAPTURE_CHECK,
+        GetModuleHandle(NULL), NULL);
+    if (!control) {
+        LOG_ERROR("Failed to create Exclude from Capture checkbox");
+        return false;
+    }
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Hide target pointer from screen recording software");
+    
+    y_pos += CONTROL_SPACING;
+    
+    // Capture Compatibility Mode
+    control = CreateWindow("BUTTON", "Capture compatibility mode",
+        WS_CHILD | BS_AUTOCHECKBOX,
+        x_label, y_pos, LABEL_WIDTH + CONTROL_WIDTH, CONTROL_HEIGHT, parent, (HMENU)IDC_CAPTURE_COMPAT_CHECK,
+        GetModuleHandle(NULL), NULL);
+    if (!control) {
+        LOG_ERROR("Failed to create Capture Compatibility checkbox");
+        return false;
+    }
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Use additional methods for older capture software compatibility");
+    
     LOG_DEBUG("Visual tab controls created successfully");
     return true;
 }
@@ -477,6 +505,27 @@ bool SettingsUI_CreateDebugTab(HWND hwnd) {
     ComboBox_AddString(log_combo, "DEBUG");
     ComboBox_AddString(log_combo, "TRACE");
     
+    y_pos += CONTROL_SPACING;
+    
+    // Capture Status Display
+    control = CreateWindow("STATIC", "Capture Exclusion Status:", WS_CHILD,
+        x_label, y_pos + 5, LABEL_WIDTH, CONTROL_HEIGHT, parent, NULL, GetModuleHandle(NULL), NULL);
+    if (!control) {
+        LOG_ERROR("Failed to create Capture Status label");
+        return false;
+    }
+    SettingsUI_ApplyFont(control);
+    
+    control = CreateWindow("STATIC", "Unknown", WS_CHILD | SS_LEFT,
+        x_control, y_pos + 5, CONTROL_WIDTH * 2, CONTROL_HEIGHT, parent, (HMENU)IDC_CAPTURE_STATUS_LABEL,
+        GetModuleHandle(NULL), NULL);
+    if (!control) {
+        LOG_ERROR("Failed to create Capture Status display");
+        return false;
+    }
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Current status of screen capture exclusion");
+    
     LOG_DEBUG("Debug tab controls created successfully");
     return true;
 }
@@ -494,9 +543,11 @@ BOOL CALLBACK SettingsUI_ShowTabControls(HWND hwnd, LPARAM lParam) {
     // Determine if control should be visible for this tab
     if (tab == TAB_BASIC && ((id >= IDC_FOLLOW_SLIDER && id <= IDC_DUAL_CHECK) || id == IDC_ENABLE_CHECK)) {
         should_show = true;
-    } else if (tab == TAB_VISUAL && ((id >= IDC_TARGET_COLOR_BUTTON && id <= IDC_TARGET_ALPHA_EDIT) || id == IDC_POINTER_TYPE_COMBO)) {
+    } else if (tab == TAB_VISUAL && ((id >= IDC_TARGET_COLOR_BUTTON && id <= IDC_TARGET_ALPHA_EDIT) || 
+                                     id == IDC_POINTER_TYPE_COMBO || id == IDC_EXCLUDE_CAPTURE_CHECK || 
+                                     id == IDC_CAPTURE_COMPAT_CHECK)) {
         should_show = true;
-    } else if (tab == TAB_DEBUG && id >= IDC_LOG_LEVEL_COMBO) {
+    } else if (tab == TAB_DEBUG && (id >= IDC_LOG_LEVEL_COMBO || id == IDC_CAPTURE_STATUS_LABEL)) {
         should_show = true;
     }
     
@@ -677,10 +728,54 @@ void SettingsUI_UpdateControls(void) {
         LOG_WARN("Target alpha slider not found");
     }
     
+    // Update Exclude from Capture checkbox
+    check = GetDlgItem(g_settings_window, IDC_EXCLUDE_CAPTURE_CHECK);
+    if (check) {
+        Button_SetCheck(check, g_stabilizer.exclude_from_capture ? BST_CHECKED : BST_UNCHECKED);
+        LOG_DEBUG("Exclude from capture checkbox updated: %s", g_stabilizer.exclude_from_capture ? "checked" : "unchecked");
+    } else {
+        LOG_WARN("Exclude from capture checkbox not found");
+    }
+    
+    // Update Capture Compatibility Mode checkbox
+    check = GetDlgItem(g_settings_window, IDC_CAPTURE_COMPAT_CHECK);
+    if (check) {
+        Button_SetCheck(check, g_stabilizer.capture_compatibility_mode ? BST_CHECKED : BST_UNCHECKED);
+        LOG_DEBUG("Capture compatibility checkbox updated: %s", g_stabilizer.capture_compatibility_mode ? "checked" : "unchecked");
+    } else {
+        LOG_WARN("Capture compatibility checkbox not found");
+    }
+    
     // Update Log Level combo
     combo = GetDlgItem(g_settings_window, IDC_LOG_LEVEL_COMBO);
     if (combo) {
         ComboBox_SetCurSel(combo, Settings_GetLogLevel());
+    }
+    
+    // Update Capture Status display
+    HWND status_label = GetDlgItem(g_settings_window, IDC_CAPTURE_STATUS_LABEL);
+    if (status_label) {
+        char status_text[200];
+        bool is_excluded = TargetPointer_IsCaptureExcluded();
+        
+        if (g_stabilizer.exclude_from_capture) {
+            if (is_excluded) {
+                strcpy_s(status_text, sizeof(status_text), "✓ Excluded from capture");
+            } else {
+                strcpy_s(status_text, sizeof(status_text), "⚠ Exclusion failed - May be visible in recordings");
+            }
+        } else {
+            strcpy_s(status_text, sizeof(status_text), "Visible in capture (exclusion disabled)");
+        }
+        
+        if (g_stabilizer.capture_compatibility_mode) {
+            strcat_s(status_text, sizeof(status_text), " [Compat Mode]");
+        }
+        
+        SetWindowText(status_label, status_text);
+        LOG_DEBUG("Capture status updated: %s", status_text);
+    } else {
+        LOG_WARN("Capture status label not found");
     }
     
     LOG_DEBUG("Settings controls updated");
@@ -768,6 +863,28 @@ void SettingsUI_ApplySettings(void) {
             g_stabilizer.target_alpha = slider_value;
             LOG_DEBUG("Target alpha changed to: %d", g_stabilizer.target_alpha);
             TargetPointer_UpdateSettings();
+        }
+    }
+    
+    // Apply Exclude from Capture
+    check = GetDlgItem(g_settings_window, IDC_EXCLUDE_CAPTURE_CHECK);
+    if (check) {
+        bool was_excluded = g_stabilizer.exclude_from_capture;
+        g_stabilizer.exclude_from_capture = (Button_GetCheck(check) == BST_CHECKED);
+        if (was_excluded != g_stabilizer.exclude_from_capture) {
+            LOG_DEBUG("Exclude from capture changed to: %s", g_stabilizer.exclude_from_capture ? "enabled" : "disabled");
+            TargetPointer_UpdateCaptureSettings();
+        }
+    }
+    
+    // Apply Capture Compatibility Mode
+    check = GetDlgItem(g_settings_window, IDC_CAPTURE_COMPAT_CHECK);
+    if (check) {
+        bool was_compat = g_stabilizer.capture_compatibility_mode;
+        g_stabilizer.capture_compatibility_mode = (Button_GetCheck(check) == BST_CHECKED);
+        if (was_compat != g_stabilizer.capture_compatibility_mode) {
+            LOG_DEBUG("Capture compatibility mode changed to: %s", g_stabilizer.capture_compatibility_mode ? "enabled" : "disabled");
+            TargetPointer_UpdateCaptureSettings();
         }
     }
     
