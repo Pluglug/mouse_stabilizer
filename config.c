@@ -9,10 +9,12 @@ void Settings_WriteLog(const char* format, ...) {
         GetModuleFileName(NULL, log_path, MAX_PATH);
         char* last_slash = strrchr(log_path, '\\');
         if (last_slash) {
-            strcpy(last_slash + 1, "mouse_stabilizer.log");
+            strcpy_s(last_slash + 1, MAX_PATH - (last_slash + 1 - log_path), "mouse_stabilizer.log");
         }
         
-        fopen_s(&log_file, log_path, "a");
+        if (fopen_s(&log_file, log_path, "a") != 0) {
+            log_file = NULL;
+        }
         first_call = false;
         
         if (log_file) {
@@ -50,7 +52,7 @@ void Settings_Load(void) {
     GetModuleFileName(NULL, config_path, MAX_PATH);
     char* last_slash = strrchr(config_path, '\\');
     if (last_slash) {
-        strcpy(last_slash + 1, "mouse_stabilizer.ini");
+        strcpy_s(last_slash + 1, MAX_PATH - (last_slash + 1 - config_path), "mouse_stabilizer.ini");
     }
     
     g_stabilizer.follow_strength = (float)GetPrivateProfileInt("Settings", "FollowStrength", 
@@ -105,7 +107,7 @@ void Settings_Save(void) {
     GetModuleFileName(NULL, config_path, MAX_PATH);
     char* last_slash = strrchr(config_path, '\\');
     if (last_slash) {
-        strcpy(last_slash + 1, "mouse_stabilizer.ini");
+        strcpy_s(last_slash + 1, MAX_PATH - (last_slash + 1 - config_path), "mouse_stabilizer.ini");
     }
     
     char buffer[32];
