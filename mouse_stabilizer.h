@@ -6,6 +6,7 @@
 // Core functionality
 #include "include/core/stabilizer_core.h"
 #include "include/core/mouse_input.h"
+#include "include/core/hotkey.h"
 
 // User interface
 #include "include/ui/target_pointer.h"
