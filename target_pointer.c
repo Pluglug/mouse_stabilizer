@@ -21,8 +21,13 @@ bool TargetPointer_CreateWindow(void) {
     wc.style = CS_HREDRAW | CS_VREDRAW;
     
     if (!RegisterClass(&wc)) {
-        Settings_WriteLog("Failed to register target window class");
-        return false;
+        DWORD error = GetLastError();
+        if (error == ERROR_CLASS_ALREADY_EXISTS) {
+            LOG_DEBUG("Target window class already registered");
+        } else {
+            LOG_ERROR("Failed to register target window class: error code %lu", error);
+            return false;
+        }
     }
     
     g_target_window = CreateWindowEx(
@@ -34,13 +39,18 @@ bool TargetPointer_CreateWindow(void) {
     );
     
     if (!g_target_window) {
-        Settings_WriteLog("Failed to create target window");
+        DWORD error = GetLastError();
+        LOG_ERROR("Failed to create target window: error code %lu", error);
         return false;
     }
     
-    SetLayeredWindowAttributes(g_target_window, RGB(0, 0, 0), g_stabilizer.target_alpha, LWA_ALPHA);
+    if (!SetLayeredWindowAttributes(g_target_window, RGB(0, 0, 0), g_stabilizer.target_alpha, LWA_ALPHA)) {
+        DWORD error = GetLastError();
+        LOG_WARN("Failed to set layered window attributes: error code %lu", error);
+        // Continue anyway, window will still function
+    }
     
-    Settings_WriteLog("Target window created successfully");
+    LOG_INFO("Target window created successfully");
     return true;
 }
 

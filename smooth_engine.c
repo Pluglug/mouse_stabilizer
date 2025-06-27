@@ -15,8 +15,18 @@ NOTIFYICONDATA g_nid = {0};          // System tray icon data
 bool g_running = true;                // Application running flag
 
 void StabilizerCore_Initialize(SmoothStabilizer* stabilizer) {
+    if (!stabilizer) {
+        LOG_ERROR("StabilizerCore_Initialize: null stabilizer parameter");
+        return;
+    }
+    
     POINT current_pos;
-    GetCursorPos(&current_pos);
+    if (!GetCursorPos(&current_pos)) {
+        LOG_ERROR("Failed to get cursor position: error code %lu", GetLastError());
+        // Use fallback position
+        current_pos.x = 100;
+        current_pos.y = 100;
+    }
     
     stabilizer->target_pos.x = (float)current_pos.x;
     stabilizer->target_pos.y = (float)current_pos.y;
@@ -93,6 +103,11 @@ float StabilizerCore_CalculateVelocity(SmoothStabilizer* stabilizer, MousePos ne
  * Core function that moves Windows cursor towards target with easing
  */
 void StabilizerCore_UpdatePosition(SmoothStabilizer* stabilizer) {
+    if (!stabilizer) {
+        LOG_ERROR("StabilizerCore_UpdatePosition: null stabilizer parameter");
+        return;
+    }
+    
     if (!stabilizer->enabled) return;
     
     float distance = StabilizerCore_CalculateDistance(stabilizer->current_pos, stabilizer->target_pos);
@@ -132,8 +147,12 @@ void StabilizerCore_UpdatePosition(SmoothStabilizer* stabilizer) {
     int new_x = (int)(stabilizer->current_pos.x + 0.5f);
     int new_y = (int)(stabilizer->current_pos.y + 0.5f);
     
+    LOG_TRACE("Moving cursor to (%d, %d)", new_x, new_y);
     
-    SetCursorPos(new_x, new_y);
+    if (!SetCursorPos(new_x, new_y)) {
+        LOG_WARN("Failed to set cursor position to (%d, %d): error code %lu", 
+                 new_x, new_y, GetLastError());
+    }
 }
 
 void StabilizerCore_SetTargetPosition(SmoothStabilizer* stabilizer, float x, float y) {
@@ -164,9 +183,16 @@ void StabilizerCore_SetTargetPosition(SmoothStabilizer* stabilizer, float x, flo
  * Updates target position that the cursor will smoothly follow
  */
 void StabilizerCore_AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float dy) {
+    if (!stabilizer) {
+        LOG_ERROR("StabilizerCore_AddMouseDelta: null stabilizer parameter");
+        return;
+    }
+    
     if (!stabilizer->enabled) {
         return;
     }
+    
+    LOG_DEBUG("Processing mouse delta: dx=%.1f, dy=%.1f", dx, dy);
     
     
     // Initialize positions on first update

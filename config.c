@@ -17,6 +17,7 @@ void Settings_WriteLog(const char* format, ...) {
         
         if (fopen_s(&log_file, log_path, "a") != 0) {
             log_file = NULL;
+            // Cannot log here since logging system is not yet initialized
         }
         first_call = false;
         

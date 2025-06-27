@@ -11,17 +11,23 @@ static bool g_in_stabilizer_update = false;  // Prevent infinite recursion
 static RAWINPUTDEVICE g_rid[1];              // Raw input device registration
 
 bool MouseInput_RegisterRawInput(void) {
-    g_rid[0].usUsagePage = 0x01;
-    g_rid[0].usUsage = 0x02;
+    if (!g_hidden_window) {
+        LOG_ERROR("Cannot register raw input: hidden window not initialized");
+        return false;
+    }
+    
+    g_rid[0].usUsagePage = 0x01;    // HID_USAGE_PAGE_GENERIC
+    g_rid[0].usUsage = 0x02;        // HID_USAGE_GENERIC_MOUSE  
     g_rid[0].dwFlags = RIDEV_INPUTSINK;
     g_rid[0].hwndTarget = g_hidden_window;
     
     if (!RegisterRawInputDevices(g_rid, 1, sizeof(g_rid[0]))) {
-        Settings_WriteLog("Failed to register raw input device");
+        DWORD error = GetLastError();
+        LOG_ERROR("Failed to register raw input device: error code %lu", error);
         return false;
     }
     
-    Settings_WriteLog("Raw input device registered successfully");
+    LOG_INFO("Raw input device registered successfully");
     return true;
 }
 
@@ -29,14 +35,26 @@ void MouseInput_ProcessRawInput(LPARAM lParam) {
     if (g_in_stabilizer_update) return;
     
     UINT dwSize = 0;
-    GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+    UINT result = GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
     
-    if (dwSize == 0) return;
+    if (result != 0) {
+        LOG_WARN("GetRawInputData size query failed: result=%u, error=%lu", result, GetLastError());
+        return;
+    }
+    
+    if (dwSize == 0) {
+        LOG_DEBUG("Raw input data size is zero");
+        return;
+    }
     
     BYTE* lpb = malloc(dwSize);
-    if (!lpb) return;
+    if (!lpb) {
+        LOG_ERROR("Failed to allocate %u bytes for raw input data", dwSize);
+        return;
+    }
     
     if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize) {
+        LOG_WARN("GetRawInputData failed to read expected data size");
         free(lpb);
         return;
     }

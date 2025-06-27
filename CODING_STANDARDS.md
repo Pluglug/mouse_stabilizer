@@ -116,7 +116,29 @@ float StabilizerCore_ApplyEasing(float t, EaseType ease_type);
 ### Error Handling
 - **Return codes**: Use bool for success/failure, specific types for data
 - **Null checks**: Always validate pointer parameters
-- **Logging**: Use Settings_WriteLog() for debugging and error reporting
+- **Resource cleanup**: Always cleanup resources in error paths
+- **Error propagation**: Propagate errors to callers with appropriate logging
+
+### Logging Guidelines
+- **Log Levels**: Use appropriate levels for different types of messages:
+  - `LOG_ERROR`: Critical errors that prevent normal operation
+  - `LOG_WARN`: Non-critical issues that should be noted
+  - `LOG_INFO`: General operational information (default level)
+  - `LOG_DEBUG`: Detailed debugging information for development
+  - `LOG_TRACE`: Very detailed trace information for complex debugging
+
+- **Log Content**: Include relevant context information:
+  ```c
+  LOG_ERROR("Failed to register raw input device: error code %lu", GetLastError());
+  LOG_WARN("Target window creation failed, continuing without visual feedback");
+  LOG_INFO("Stabilizer enabled with follow strength %.2f", g_stabilizer.follow_strength);
+  LOG_DEBUG("Processing mouse delta: dx=%.1f, dy=%.1f", dx, dy);
+  LOG_TRACE("Entering function %s with parameter %d", __func__, param);
+  ```
+
+- **Performance**: Logging is filtered by level, but avoid expensive operations in log statements
+- **Privacy**: Never log sensitive user data or system information
+- **Format**: Use clear, actionable messages that help with debugging
 
 ### Memory Management
 - **Initialization**: Always initialize structures to zero: `= {0}`
