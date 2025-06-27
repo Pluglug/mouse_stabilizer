@@ -125,7 +125,7 @@ void Settings_Save(void) {
     sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.enabled ? 1 : 0);
     WritePrivateProfileString("Settings", "Enabled", buffer, config_path);
     
-    sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.delay_start_ms);
+    sprintf_s(buffer, sizeof(buffer), "%lu", (unsigned long)g_stabilizer.delay_start_ms);
     WritePrivateProfileString("Settings", "DelayStartMs", buffer, config_path);
     
     sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.target_show_distance * 10));

@@ -33,8 +33,8 @@ void TrayUI_UpdateIcon(void) {
     }
     
     sprintf_s(g_nid.szTip, sizeof(g_nid.szTip), 
-              "Mouse Stabilizer - %s\nEase: %s\nFollow: %.2f\nDelay: %dms",
-              status, ease_name, g_stabilizer.follow_strength, g_stabilizer.delay_start_ms);
+              "Mouse Stabilizer - %s\nEase: %s\nFollow: %.2f\nDelay: %lums",
+              status, ease_name, g_stabilizer.follow_strength, (unsigned long)g_stabilizer.delay_start_ms);
     
     Shell_NotifyIcon(NIM_MODIFY, &g_nid);
 }
@@ -67,8 +67,8 @@ void TrayUI_ShowContextMenu(HWND hwnd) {
     AppendMenu(hMenu, MF_STRING, 1004, dual_text);
     
     char delay_text[256];
-    sprintf_s(delay_text, sizeof(delay_text), "Delay: %dms (Click to change)", 
-              g_stabilizer.delay_start_ms);
+    sprintf_s(delay_text, sizeof(delay_text), "Delay: %lums (Click to change)", 
+              (unsigned long)g_stabilizer.delay_start_ms);
     AppendMenu(hMenu, MF_STRING, 1005, delay_text);
     
     char distance_text[256];

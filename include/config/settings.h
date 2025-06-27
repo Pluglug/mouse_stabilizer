@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 // Enable Microsoft secure functions
 #ifdef _MSC_VER
@@ -14,6 +15,8 @@
     // For non-MSVC compilers, provide sprintf_s compatibility
     #define sprintf_s snprintf
     #define strcpy_s(dest, size, src) strncpy(dest, src, size-1); dest[size-1] = '\0'
+    #define localtime_s(timeptr, timer) localtime_r(timer, timeptr)
+    #define fopen_s(pFile, filename, mode) ((*pFile = fopen(filename, mode)) == NULL)
 #endif
 
 // Settings management functions
