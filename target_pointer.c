@@ -81,6 +81,30 @@ void TargetPointer_UpdateWindow(void) {
     }
 }
 
+void TargetPointer_UpdateSettings(void) {
+    if (!g_target_window) return;
+    
+    // Update layered window attributes for transparency
+    SetLayeredWindowAttributes(g_target_window, RGB(255, 0, 255), g_stabilizer.target_alpha, LWA_COLORKEY | LWA_ALPHA);
+    
+    // Update window size if currently visible
+    if (g_target_visible) {
+        int size = g_stabilizer.target_size * 3;
+        int x = (int)(g_stabilizer.target_pos.x - size / 2);
+        int y = (int)(g_stabilizer.target_pos.y - size / 2);
+        
+        SetWindowPos(g_target_window, HWND_TOPMOST, x, y, size, size, 
+                     SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    }
+    
+    // Force repaint to reflect changes
+    InvalidateRect(g_target_window, NULL, TRUE);
+    UpdateWindow(g_target_window);
+    
+    LOG_DEBUG("Target pointer settings updated - Size: %d, Alpha: %d", 
+              g_stabilizer.target_size, g_stabilizer.target_alpha);
+}
+
 void TargetPointer_Show(bool show) {
     if (!g_target_window) return;
     

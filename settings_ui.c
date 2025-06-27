@@ -393,87 +393,86 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     
     y_pos += CONTROL_SPACING;
     
-    // Target Distance
-    control = CreateWindow("STATIC", "Target Distance:", WS_CHILD,
+    // Target Color
+    control = CreateWindow("STATIC", "Target Color:", WS_CHILD,
         x_label, y_pos + 5, LABEL_WIDTH, CONTROL_HEIGHT, parent, NULL, GetModuleHandle(NULL), NULL);
     if (!control) {
-        LOG_ERROR("Failed to create Target Distance label");
+        LOG_ERROR("Failed to create Target Color label");
+        return false;
+    }
+    SettingsUI_ApplyFont(control);
+    
+    control = CreateWindow("BUTTON", "Choose Color...", WS_CHILD | BS_PUSHBUTTON,
+        x_control, y_pos, 120, CONTROL_HEIGHT, parent, (HMENU)IDC_TARGET_COLOR_BUTTON,
+        GetModuleHandle(NULL), NULL);
+    if (!control) {
+        LOG_ERROR("Failed to create Target Color button");
+        return false;
+    }
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Click to choose target pointer color");
+    
+    y_pos += CONTROL_SPACING;
+    
+    // Target Size
+    control = CreateWindow("STATIC", "Target Size:", WS_CHILD,
+        x_label, y_pos + 5, LABEL_WIDTH, CONTROL_HEIGHT, parent, NULL, GetModuleHandle(NULL), NULL);
+    if (!control) {
+        LOG_ERROR("Failed to create Target Size label");
         return false;
     }
     SettingsUI_ApplyFont(control);
     
     control = CreateWindow(TRACKBAR_CLASS, NULL,
         WS_CHILD | TBS_HORZ | TBS_TOOLTIPS | TBS_ENABLESELRANGE,
-        x_control, y_pos, CONTROL_WIDTH, CONTROL_HEIGHT, parent, (HMENU)IDC_TARGET_DIST_SLIDER,
+        x_control, y_pos, CONTROL_WIDTH, CONTROL_HEIGHT, parent, (HMENU)IDC_TARGET_SIZE_SLIDER,
         GetModuleHandle(NULL), NULL);
     if (!control) {
-        LOG_ERROR("Failed to create Target Distance slider");
+        LOG_ERROR("Failed to create Target Size slider");
         return false;
     }
-    SettingsUI_AddTooltip(control, "Distance at which target pointer appears");
+    SettingsUI_AddTooltip(control, "Size of the target pointer (3-20 pixels)");
     
-    control = CreateWindow("EDIT", NULL, WS_CHILD | WS_BORDER | ES_NUMBER,
-        x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_TARGET_DIST_EDIT,
+    // Target Size value display (read-only)
+    control = CreateWindow("STATIC", "8", WS_CHILD | SS_CENTER | WS_BORDER,
+        x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_TARGET_SIZE_EDIT,
         GetModuleHandle(NULL), NULL);
     if (!control) {
-        LOG_ERROR("Failed to create Target Distance edit");
+        LOG_ERROR("Failed to create Target Size display");
         return false;
     }
     SettingsUI_ApplyFont(control);
     
     y_pos += CONTROL_SPACING;
     
-    // Target Size  
-    control = CreateWindow("STATIC", "Target Size:", WS_CHILD,
-        20, y_pos, 120, 20, parent, NULL, GetModuleHandle(NULL), NULL);
-    if (!control) {
-        LOG_ERROR("Failed to create Target Size label");
-        return false;
-    }
-    
-    control = CreateWindow(TRACKBAR_CLASS, NULL,
-        WS_CHILD | TBS_HORZ | TBS_TOOLTIPS,
-        150, y_pos, 150, 25, parent, (HMENU)IDC_TARGET_SIZE_SLIDER,
-        GetModuleHandle(NULL), NULL);
-    if (!control) {
-        LOG_ERROR("Failed to create Target Size slider");
-        return false;
-    }
-    
-    control = CreateWindow("EDIT", NULL, WS_CHILD | WS_BORDER | ES_NUMBER,
-        310, y_pos, 50, 20, parent, (HMENU)IDC_TARGET_SIZE_EDIT,
-        GetModuleHandle(NULL), NULL);
-    if (!control) {
-        LOG_ERROR("Failed to create Target Size edit");
-        return false;
-    }
-    
-    y_pos += CONTROL_SPACING;
-    
     // Target Alpha
     control = CreateWindow("STATIC", "Target Alpha:", WS_CHILD,
-        20, y_pos, 120, 20, parent, NULL, GetModuleHandle(NULL), NULL);
+        x_label, y_pos + 5, LABEL_WIDTH, CONTROL_HEIGHT, parent, NULL, GetModuleHandle(NULL), NULL);
     if (!control) {
         LOG_ERROR("Failed to create Target Alpha label");
         return false;
     }
+    SettingsUI_ApplyFont(control);
     
     control = CreateWindow(TRACKBAR_CLASS, NULL,
-        WS_CHILD | TBS_HORZ | TBS_TOOLTIPS,
-        150, y_pos, 150, 25, parent, (HMENU)IDC_TARGET_ALPHA_SLIDER,
+        WS_CHILD | TBS_HORZ | TBS_TOOLTIPS | TBS_ENABLESELRANGE,
+        x_control, y_pos, CONTROL_WIDTH, CONTROL_HEIGHT, parent, (HMENU)IDC_TARGET_ALPHA_SLIDER,
         GetModuleHandle(NULL), NULL);
     if (!control) {
         LOG_ERROR("Failed to create Target Alpha slider");
         return false;
     }
+    SettingsUI_AddTooltip(control, "Transparency of target pointer (50-255)");
     
-    control = CreateWindow("EDIT", NULL, WS_CHILD | WS_BORDER | ES_NUMBER,
-        310, y_pos, 50, 20, parent, (HMENU)IDC_TARGET_ALPHA_EDIT,
+    // Target Alpha value display (read-only)
+    control = CreateWindow("STATIC", "180", WS_CHILD | SS_CENTER | WS_BORDER,
+        x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_TARGET_ALPHA_EDIT,
         GetModuleHandle(NULL), NULL);
     if (!control) {
-        LOG_ERROR("Failed to create Target Alpha edit");
+        LOG_ERROR("Failed to create Target Alpha display");
         return false;
     }
+    SettingsUI_ApplyFont(control);
     
     LOG_DEBUG("Visual tab controls created successfully");
     return true;
@@ -532,7 +531,7 @@ BOOL CALLBACK SettingsUI_ShowTabControls(HWND hwnd, LPARAM lParam) {
     // Determine if control should be visible for this tab
     if (tab == TAB_BASIC && ((id >= IDC_FOLLOW_SLIDER && id <= IDC_DUAL_CHECK) || id == IDC_ENABLE_CHECK)) {
         should_show = true;
-    } else if (tab == TAB_VISUAL && ((id >= IDC_TARGET_DIST_SLIDER && id <= IDC_TARGET_ALPHA_EDIT) || id == IDC_POINTER_TYPE_COMBO)) {
+    } else if (tab == TAB_VISUAL && ((id >= IDC_TARGET_COLOR_BUTTON && id <= IDC_TARGET_ALPHA_EDIT) || id == IDC_POINTER_TYPE_COMBO)) {
         should_show = true;
     } else if (tab == TAB_DEBUG && id >= IDC_LOG_LEVEL_COMBO) {
         should_show = true;
@@ -576,6 +575,30 @@ LRESULT CALLBACK SettingsUI_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
         
         case WM_COMMAND: {
             int code = HIWORD(wParam);
+            int id = LOWORD(wParam);
+            
+            // Handle color picker button
+            if (id == IDC_TARGET_COLOR_BUTTON && code == BN_CLICKED) {
+                CHOOSECOLOR cc = {0};
+                static COLORREF custom_colors[16] = {0};
+                
+                cc.lStructSize = sizeof(CHOOSECOLOR);
+                cc.hwndOwner = g_settings_window;
+                cc.lpCustColors = custom_colors;
+                cc.rgbResult = g_stabilizer.target_color;
+                cc.Flags = CC_FULLOPEN | CC_RGBINIT;
+                
+                if (ChooseColor(&cc)) {
+                    g_stabilizer.target_color = cc.rgbResult;
+                    LOG_DEBUG("Target color changed to: RGB(%d,%d,%d)", 
+                              GetRValue(g_stabilizer.target_color),
+                              GetGValue(g_stabilizer.target_color), 
+                              GetBValue(g_stabilizer.target_color));
+                    Settings_Save();
+                    TargetPointer_UpdateSettings();
+                }
+                break;
+            }
             
             // Handle real-time updates - but avoid feedback loops
             if ((code == CBN_SELCHANGE || code == BN_CLICKED || code == EN_CHANGE) && !g_updating_controls) {
@@ -685,6 +708,44 @@ void SettingsUI_UpdateControls(void) {
         LOG_WARN("Pointer type combo not found");
     }
     
+    // Update Target Size
+    slider = GetDlgItem(g_settings_window, IDC_TARGET_SIZE_SLIDER);
+    if (slider) {
+        SendMessage(slider, TBM_SETRANGE, TRUE, MAKELPARAM(3, 20));  // 3 to 20 pixels
+        SendMessage(slider, TBM_SETPOS, TRUE, g_stabilizer.target_size);
+        LOG_DEBUG("Target size slider updated: %d", g_stabilizer.target_size);
+    } else {
+        LOG_WARN("Target size slider not found");
+    }
+    
+    edit = GetDlgItem(g_settings_window, IDC_TARGET_SIZE_EDIT);
+    if (edit) {
+        sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.target_size);
+        SetWindowText(edit, buffer);
+        LOG_DEBUG("Target size display updated: %s", buffer);
+    } else {
+        LOG_WARN("Target size display not found");
+    }
+    
+    // Update Target Alpha
+    slider = GetDlgItem(g_settings_window, IDC_TARGET_ALPHA_SLIDER);
+    if (slider) {
+        SendMessage(slider, TBM_SETRANGE, TRUE, MAKELPARAM(50, 255));  // 50 to 255
+        SendMessage(slider, TBM_SETPOS, TRUE, g_stabilizer.target_alpha);
+        LOG_DEBUG("Target alpha slider updated: %d", g_stabilizer.target_alpha);
+    } else {
+        LOG_WARN("Target alpha slider not found");
+    }
+    
+    edit = GetDlgItem(g_settings_window, IDC_TARGET_ALPHA_EDIT);
+    if (edit) {
+        sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.target_alpha);
+        SetWindowText(edit, buffer);
+        LOG_DEBUG("Target alpha display updated: %s", buffer);
+    } else {
+        LOG_WARN("Target alpha display not found");
+    }
+    
     // Update Log Level combo
     combo = GetDlgItem(g_settings_window, IDC_LOG_LEVEL_COMBO);
     if (combo) {
@@ -743,11 +804,7 @@ void SettingsUI_ApplySettings(void) {
         if (sel >= 0 && sel <= 1) {
             g_stabilizer.pointer_type = (PointerType)sel;
             LOG_DEBUG("Pointer type changed to: %d", g_stabilizer.pointer_type);
-            // Force target window repaint
-            if (g_target_window) {
-                InvalidateRect(g_target_window, NULL, TRUE);
-                UpdateWindow(g_target_window);
-            }
+            TargetPointer_UpdateSettings();
         }
     }
     
@@ -769,6 +826,28 @@ void SettingsUI_ApplySettings(void) {
     HWND check = GetDlgItem(g_settings_window, IDC_DUAL_CHECK);
     if (check) {
         g_stabilizer.dual_mode = (Button_GetCheck(check) == BST_CHECKED);
+    }
+    
+    // Apply Target Size from slider only
+    HWND size_slider = GetDlgItem(g_settings_window, IDC_TARGET_SIZE_SLIDER);
+    if (size_slider) {
+        int slider_value = (int)SendMessage(size_slider, TBM_GETPOS, 0, 0);
+        if (slider_value >= 3 && slider_value <= 20 && slider_value != g_stabilizer.target_size) {
+            g_stabilizer.target_size = slider_value;
+            LOG_DEBUG("Target size changed to: %d", g_stabilizer.target_size);
+            TargetPointer_UpdateSettings();
+        }
+    }
+    
+    // Apply Target Alpha from slider only
+    HWND alpha_slider = GetDlgItem(g_settings_window, IDC_TARGET_ALPHA_SLIDER);
+    if (alpha_slider) {
+        int slider_value = (int)SendMessage(alpha_slider, TBM_GETPOS, 0, 0);
+        if (slider_value >= 50 && slider_value <= 255 && slider_value != g_stabilizer.target_alpha) {
+            g_stabilizer.target_alpha = slider_value;
+            LOG_DEBUG("Target alpha changed to: %d", g_stabilizer.target_alpha);
+            TargetPointer_UpdateSettings();
+        }
     }
     
     // Apply Log Level

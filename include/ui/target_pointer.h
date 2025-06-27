@@ -17,6 +17,7 @@ extern HWND g_target_window;
 // Target pointer management
 bool TargetPointer_CreateWindow(void);
 void TargetPointer_UpdateWindow(void);
+void TargetPointer_UpdateSettings(void);
 void TargetPointer_Show(bool show);
 LRESULT CALLBACK TargetPointer_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
