@@ -234,7 +234,6 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     int y_pos = 55;
     int x_label = 30;
     int x_control = x_label + LABEL_WIDTH + 10;
-    int x_edit = x_control + CONTROL_WIDTH + 10;
     HWND parent = hwnd;
     HWND control;
     
@@ -271,15 +270,6 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     }
     SettingsUI_AddTooltip(control, "Controls how quickly the cursor follows the target (0.05-1.0)");
     
-    // Follow Strength value display (read-only)
-    control = CreateWindow("STATIC", "0.15", WS_CHILD | WS_VISIBLE | SS_CENTER | WS_BORDER,
-        x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_FOLLOW_EDIT,
-        GetModuleHandle(NULL), NULL);
-    if (!control) {
-        LOG_ERROR("Failed to create Follow Strength display");
-        return false;
-    }
-    SettingsUI_ApplyFont(control);
     
     y_pos += CONTROL_SPACING;
     
@@ -330,15 +320,6 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     }
     SettingsUI_AddTooltip(control, "Delay before stabilization starts (0-500ms)");
     
-    // Delay Start value display (read-only)
-    control = CreateWindow("STATIC", "150", WS_CHILD | WS_VISIBLE | SS_CENTER | WS_BORDER,
-        x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_DELAY_EDIT,
-        GetModuleHandle(NULL), NULL);
-    if (!control) {
-        LOG_ERROR("Failed to create Delay Start display");
-        return false;
-    }
-    SettingsUI_ApplyFont(control);
     
     y_pos += CONTROL_SPACING;
     
@@ -365,7 +346,6 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     int y_pos = 55;
     int x_label = 30;
     int x_control = x_label + LABEL_WIDTH + 10;
-    int x_edit = x_control + CONTROL_WIDTH + 10;
     HWND parent = hwnd;
     HWND control;
     
@@ -435,15 +415,6 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     }
     SettingsUI_AddTooltip(control, "Size of the target pointer (3-20 pixels)");
     
-    // Target Size value display (read-only)
-    control = CreateWindow("STATIC", "8", WS_CHILD | SS_CENTER | WS_BORDER,
-        x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_TARGET_SIZE_EDIT,
-        GetModuleHandle(NULL), NULL);
-    if (!control) {
-        LOG_ERROR("Failed to create Target Size display");
-        return false;
-    }
-    SettingsUI_ApplyFont(control);
     
     y_pos += CONTROL_SPACING;
     
@@ -465,16 +436,6 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
         return false;
     }
     SettingsUI_AddTooltip(control, "Transparency of target pointer (50-255)");
-    
-    // Target Alpha value display (read-only)
-    control = CreateWindow("STATIC", "180", WS_CHILD | SS_CENTER | WS_BORDER,
-        x_edit, y_pos + 2, EDIT_WIDTH, CONTROL_HEIGHT - 4, parent, (HMENU)IDC_TARGET_ALPHA_EDIT,
-        GetModuleHandle(NULL), NULL);
-    if (!control) {
-        LOG_ERROR("Failed to create Target Alpha display");
-        return false;
-    }
-    SettingsUI_ApplyFont(control);
     
     LOG_DEBUG("Visual tab controls created successfully");
     return true;
@@ -646,8 +607,6 @@ void SettingsUI_UpdateControls(void) {
     g_updating_controls = true;
     LOG_DEBUG("Updating controls with current settings");
     
-    char buffer[32];
-    
     // Update Enable checkbox
     HWND enable_check = GetDlgItem(g_settings_window, IDC_ENABLE_CHECK);
     if (enable_check) {
@@ -667,14 +626,6 @@ void SettingsUI_UpdateControls(void) {
         LOG_WARN("Follow strength slider not found");
     }
     
-    HWND edit = GetDlgItem(g_settings_window, IDC_FOLLOW_EDIT);
-    if (edit) {
-        sprintf_s(buffer, sizeof(buffer), "%.2f", g_stabilizer.follow_strength);
-        SetWindowText(edit, buffer);
-        LOG_DEBUG("Follow strength display updated: %s", buffer);
-    } else {
-        LOG_WARN("Follow strength display not found");
-    }
     
     // Update Ease Type
     HWND combo = GetDlgItem(g_settings_window, IDC_EASE_COMBO);
@@ -689,14 +640,6 @@ void SettingsUI_UpdateControls(void) {
         SendMessage(slider, TBM_SETPOS, TRUE, g_stabilizer.delay_start_ms);
     }
     
-    edit = GetDlgItem(g_settings_window, IDC_DELAY_EDIT);
-    if (edit) {
-        sprintf_s(buffer, sizeof(buffer), "%lu", (unsigned long)g_stabilizer.delay_start_ms);
-        SetWindowText(edit, buffer);
-        LOG_DEBUG("Delay start display updated: %s", buffer);
-    } else {
-        LOG_WARN("Delay start display not found");
-    }
     
     // Update Dual Mode
     HWND check = GetDlgItem(g_settings_window, IDC_DUAL_CHECK);
@@ -723,14 +666,6 @@ void SettingsUI_UpdateControls(void) {
         LOG_WARN("Target size slider not found");
     }
     
-    edit = GetDlgItem(g_settings_window, IDC_TARGET_SIZE_EDIT);
-    if (edit) {
-        sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.target_size);
-        SetWindowText(edit, buffer);
-        LOG_DEBUG("Target size display updated: %s", buffer);
-    } else {
-        LOG_WARN("Target size display not found");
-    }
     
     // Update Target Alpha
     slider = GetDlgItem(g_settings_window, IDC_TARGET_ALPHA_SLIDER);
@@ -740,15 +675,6 @@ void SettingsUI_UpdateControls(void) {
         LOG_DEBUG("Target alpha slider updated: %d", g_stabilizer.target_alpha);
     } else {
         LOG_WARN("Target alpha slider not found");
-    }
-    
-    edit = GetDlgItem(g_settings_window, IDC_TARGET_ALPHA_EDIT);
-    if (edit) {
-        sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.target_alpha);
-        SetWindowText(edit, buffer);
-        LOG_DEBUG("Target alpha display updated: %s", buffer);
-    } else {
-        LOG_WARN("Target alpha display not found");
     }
     
     // Update Log Level combo
