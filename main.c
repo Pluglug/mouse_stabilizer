@@ -46,15 +46,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     Settings_Load();
     
     if (!RegisterHotKey(g_hidden_window, HOTKEY_ID, MOD_CONTROL | MOD_ALT, 'S')) {
-        Settings_WriteLog("Failed to register hotkey Ctrl+Alt+S");
+        LOG_ERROR("Failed to register hotkey Ctrl+Alt+S");
     } else {
-        Settings_WriteLog("Hotkey Ctrl+Alt+S registered successfully");
+        LOG_INFO("Hotkey Ctrl+Alt+S registered successfully");
     }
     
     if (!TrayUI_CreateIcon(g_hidden_window)) {
-        Settings_WriteLog("Failed to create tray icon");
+        LOG_ERROR("Failed to create tray icon");
     } else {
-        Settings_WriteLog("Tray icon created successfully");
+        LOG_INFO("Tray icon created successfully");
     }
     
     if (!SetTimer(g_hidden_window, TIMER_ID, UPDATE_INTERVAL_MS, NULL)) {
@@ -70,20 +70,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
     
     if (!TargetPointer_CreateWindow()) {
-        Settings_WriteLog("Failed to create target window - continuing without target pointer");
+        LOG_WARN("Failed to create target window - continuing without target pointer");
     }
     
     if (!MouseInput_RegisterRawInput()) {
-        Settings_WriteLog("Failed to register raw input - using fallback method");
+        LOG_WARN("Failed to register raw input - using fallback method");
     }
     
     mouse_hook = SetWindowsHookEx(WH_MOUSE_LL, MouseInput_LowLevelMouseProc, hInstance, 0);
     if (!mouse_hook) {
-        Settings_WriteLog("Failed to install mouse hook");
+        LOG_ERROR("Failed to install mouse hook");
         MessageBox(NULL, "Failed to install mouse hook", "Error", MB_ICONERROR);
         return 1;
     } else {
-        Settings_WriteLog("Mouse hook installed successfully");
+        LOG_INFO("Mouse hook installed successfully");
     }
     
     Settings_WriteLog("Mouse Stabilizer started - Follow: %.2f, MinDist: %.1f, Ease: %d, Dual: %s, Delay: %dms, Enabled: %s",

@@ -85,6 +85,15 @@ LRESULT CALLBACK Hotkey_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
                     Settings_WriteLog("Target show distance: %.1f", g_stabilizer.target_show_distance);
                     Settings_Save();
                     break;
+                case 1008:
+                    // Cycle through log levels: ERROR -> WARN -> INFO -> DEBUG -> TRACE -> ERROR
+                    {
+                        LogLevel current = Settings_GetLogLevel();
+                        LogLevel next = (LogLevel)((current + 1) % (LOG_TRACE + 1));
+                        Settings_SetLogLevel(next);
+                        Settings_Save();
+                    }
+                    break;
                 case 1007:
                     g_running = false;
                     PostQuitMessage(0);

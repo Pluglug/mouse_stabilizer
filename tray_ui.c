@@ -76,6 +76,11 @@ void TrayUI_ShowContextMenu(HWND hwnd) {
               g_stabilizer.target_show_distance);
     AppendMenu(hMenu, MF_STRING, 1006, distance_text);
     
+    char log_level_text[256];
+    sprintf_s(log_level_text, sizeof(log_level_text), "Log Level: %s (Click to change)", 
+              Settings_GetLogLevelName(Settings_GetLogLevel()));
+    AppendMenu(hMenu, MF_STRING, 1008, log_level_text);
+    
     AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hMenu, MF_STRING, 1007, "Exit");
     
