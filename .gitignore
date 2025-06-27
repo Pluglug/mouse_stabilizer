@@ -1,0 +1,31 @@
+# Compiled files
+*.o
+*.exe
+*.dll
+*.pdb
+
+# Build artifacts
+*.lib
+*.exp
+*.ilk
+
+# Runtime files
+*.log
+*.ini
+
+# Windows metadata
+*:Zone.Identifier
+
+# Editor files
+.vscode/
+*.swp
+*.swo
+*~
+
+# Debug files
+*.gdb_history
+core
+
+# OS files
+Thumbs.db
+.DS_Store
