@@ -14,7 +14,10 @@
 #else
     // For non-MSVC compilers, provide sprintf_s compatibility
     #define sprintf_s snprintf
-    #define strcpy_s(dest, size, src) strncpy(dest, src, size-1); dest[size-1] = '\0'
+    #define strcpy_s(dest, size, src) do { \
+        strncpy(dest, src, (size)-1); \
+        *((dest) + (size) - 1) = '\0'; \
+    } while(0)
 #endif
 
 // Tray UI constants

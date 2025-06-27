@@ -14,9 +14,12 @@
 #else
     // For non-MSVC compilers, provide sprintf_s compatibility
     #define sprintf_s snprintf
-    #define strcpy_s(dest, size, src) strncpy(dest, src, size-1); dest[size-1] = '\0'
+    #define strcpy_s(dest, size, src) do { \
+        strncpy(dest, src, (size)-1); \
+        *((dest) + (size) - 1) = '\0'; \
+    } while(0)
     // For MinGW/non-MSVC compilers on Windows, use standard functions
-    #define localtime_s(timeptr, timer) (*(timeptr) = *localtime(timer), 0)
+    #define localtime_s(timeptr, timer) do { *(timeptr) = *localtime(timer); } while(0)
     #define fopen_s(pFile, filename, mode) ((*(pFile) = fopen(filename, mode)) ? 0 : 1)
 #endif
 
