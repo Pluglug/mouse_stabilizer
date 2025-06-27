@@ -1,6 +1,6 @@
 #include "mouse_stabilizer.h"
 
-void WriteLog(const char* format, ...) {
+void Settings_WriteLog(const char* format, ...) {
     static FILE* log_file = NULL;
     static bool first_call = true;
     
@@ -45,7 +45,7 @@ void WriteLog(const char* format, ...) {
     fflush(log_file);
 }
 
-void LoadSettings(void) {
+void Settings_Load(void) {
     char config_path[MAX_PATH];
     GetModuleFileName(NULL, config_path, MAX_PATH);
     char* last_slash = strrchr(config_path, '\\');
@@ -94,13 +94,13 @@ void LoadSettings(void) {
     if (g_stabilizer.target_alpha < 50) g_stabilizer.target_alpha = 50;
     if (g_stabilizer.target_alpha > 255) g_stabilizer.target_alpha = 255;
     
-    WriteLog("Settings loaded - Follow: %.2f, Ease: %d, Dual: %s, Delay: %dms, TargetDist: %.1f, Enabled: %s",
+    Settings_WriteLog("Settings loaded - Follow: %.2f, Ease: %d, Dual: %s, Delay: %dms, TargetDist: %.1f, Enabled: %s",
              g_stabilizer.follow_strength, g_stabilizer.ease_type,
              g_stabilizer.dual_mode ? "true" : "false", g_stabilizer.delay_start_ms,
              g_stabilizer.target_show_distance, g_stabilizer.enabled ? "true" : "false");
 }
 
-void SaveSettings(void) {
+void Settings_Save(void) {
     char config_path[MAX_PATH];
     GetModuleFileName(NULL, config_path, MAX_PATH);
     char* last_slash = strrchr(config_path, '\\');
@@ -140,5 +140,5 @@ void SaveSettings(void) {
     sprintf_s(buffer, sizeof(buffer), "%d", (int)g_stabilizer.target_color);
     WritePrivateProfileString("Settings", "TargetColor", buffer, config_path);
     
-    WriteLog("Settings saved");
+    Settings_WriteLog("Settings saved");
 }

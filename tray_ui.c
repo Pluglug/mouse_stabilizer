@@ -1,7 +1,7 @@
 #include "mouse_stabilizer.h"
 #include <shellapi.h>
 
-bool CreateTrayIcon(HWND hwnd) {
+bool TrayUI_CreateIcon(HWND hwnd) {
     g_nid.cbSize = sizeof(NOTIFYICONDATA);
     g_nid.hWnd = hwnd;
     g_nid.uID = TRAY_ICON_ID;
@@ -13,7 +13,7 @@ bool CreateTrayIcon(HWND hwnd) {
     return Shell_NotifyIcon(NIM_ADD, &g_nid);
 }
 
-void UpdateTrayIcon(void) {
+void TrayUI_UpdateIcon(void) {
     const char* status = g_stabilizer.enabled ? "Enabled" : "Disabled";
     const char* ease_name = "";
     
@@ -39,7 +39,7 @@ void UpdateTrayIcon(void) {
     Shell_NotifyIcon(NIM_MODIFY, &g_nid);
 }
 
-void ShowContextMenu(HWND hwnd) {
+void TrayUI_ShowContextMenu(HWND hwnd) {
     HMENU hMenu = CreatePopupMenu();
     POINT pt;
     

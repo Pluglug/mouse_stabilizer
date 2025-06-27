@@ -2,18 +2,18 @@
 static bool g_target_visible = false;
 static DWORD g_last_draw_time = 0;
 
-bool CreateTargetWindow(void) {
+bool TargetPointer_CreateWindow(void) {
     const char* class_name = "MouseStabilizerTarget";
     WNDCLASS wc = {0};
     
-    wc.lpfnWndProc = TargetWindowProc;
+    wc.lpfnWndProc = TargetPointer_WindowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = class_name;
     wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
     wc.style = CS_HREDRAW | CS_VREDRAW;
     
     if (!RegisterClass(&wc)) {
-        WriteLog("Failed to register target window class");
+        Settings_WriteLog("Failed to register target window class");
         return false;
     }
     
@@ -26,28 +26,28 @@ bool CreateTargetWindow(void) {
     );
     
     if (!g_target_window) {
-        WriteLog("Failed to create target window");
+        Settings_WriteLog("Failed to create target window");
         return false;
     }
     
     SetLayeredWindowAttributes(g_target_window, RGB(0, 0, 0), g_stabilizer.target_alpha, LWA_ALPHA);
     
-    WriteLog("Target window created successfully");
+    Settings_WriteLog("Target window created successfully");
     return true;
 }
 
-void UpdateTargetWindow(void) {
+void TargetPointer_UpdateWindow(void) {
     if (!g_target_window || !g_stabilizer.enabled) return;
     
     DWORD current_time = GetTickCount();
     if (current_time - g_last_draw_time < DRAW_INTERVAL_MS) return;
     g_last_draw_time = current_time;
     
-    float distance = CalculateDistance(g_stabilizer.target_pos, g_stabilizer.current_pos);
+    float distance = StabilizerCore_CalculateDistance(g_stabilizer.target_pos, g_stabilizer.current_pos);
     bool should_show = distance >= g_stabilizer.target_show_distance;
     
     if (should_show != g_target_visible) {
-        ShowTargetPointer(should_show);
+        TargetPointer_Show(should_show);
     }
     
     if (g_target_visible) {
@@ -62,21 +62,21 @@ void UpdateTargetWindow(void) {
     }
 }
 
-void ShowTargetPointer(bool show) {
+void TargetPointer_Show(bool show) {
     if (!g_target_window) return;
     
     if (show && !g_target_visible) {
         ShowWindow(g_target_window, SW_SHOWNOACTIVATE);
         g_target_visible = true;
-        WriteLog("Target pointer shown");
+        Settings_WriteLog("Target pointer shown");
     } else if (!show && g_target_visible) {
         ShowWindow(g_target_window, SW_HIDE);
         g_target_visible = false;
-        WriteLog("Target pointer hidden");
+        Settings_WriteLog("Target pointer hidden");
     }
 }
 
-LRESULT CALLBACK TargetWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK TargetPointer_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_PAINT: {
             PAINTSTRUCT ps;

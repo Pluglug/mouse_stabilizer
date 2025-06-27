@@ -3,22 +3,22 @@
 static bool g_in_stabilizer_update = false;
 static RAWINPUTDEVICE g_rid[1];
 
-bool RegisterRawInput(void) {
+bool MouseInput_RegisterRawInput(void) {
     g_rid[0].usUsagePage = 0x01;
     g_rid[0].usUsage = 0x02;
     g_rid[0].dwFlags = RIDEV_INPUTSINK;
     g_rid[0].hwndTarget = g_hidden_window;
     
     if (!RegisterRawInputDevices(g_rid, 1, sizeof(g_rid[0]))) {
-        WriteLog("Failed to register raw input device");
+        Settings_WriteLog("Failed to register raw input device");
         return false;
     }
     
-    WriteLog("Raw input device registered successfully");
+    Settings_WriteLog("Raw input device registered successfully");
     return true;
 }
 
-void ProcessRawInput(LPARAM lParam) {
+void MouseInput_ProcessRawInput(LPARAM lParam) {
     if (g_in_stabilizer_update) return;
     
     UINT dwSize = 0;
@@ -39,7 +39,7 @@ void ProcessRawInput(LPARAM lParam) {
     if (raw->header.dwType == RIM_TYPEMOUSE && g_stabilizer.enabled) {
         if (raw->data.mouse.lLastX != 0 || raw->data.mouse.lLastY != 0) {
             g_in_stabilizer_update = true;
-            AddMouseDelta(&g_stabilizer, (float)raw->data.mouse.lLastX, (float)raw->data.mouse.lLastY);
+            StabilizerCore_AddMouseDelta(&g_stabilizer, (float)raw->data.mouse.lLastX, (float)raw->data.mouse.lLastY);
             g_in_stabilizer_update = false;
         }
     }
@@ -47,7 +47,7 @@ void ProcessRawInput(LPARAM lParam) {
     free(lpb);
 }
 
-LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK MouseInput_LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
     if (nCode >= 0 && g_stabilizer.enabled && !g_in_stabilizer_update) {
         if (wParam == WM_MOUSEMOVE) {
             return 1;

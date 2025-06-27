@@ -6,7 +6,7 @@ HWND g_target_window = NULL;
 NOTIFYICONDATA g_nid = {0};
 bool g_running = true;
 
-void InitializeStabilizer(SmoothStabilizer* stabilizer) {
+void StabilizerCore_Initialize(SmoothStabilizer* stabilizer) {
     POINT current_pos;
     GetCursorPos(&current_pos);
     
@@ -33,11 +33,11 @@ void InitializeStabilizer(SmoothStabilizer* stabilizer) {
     stabilizer->target_alpha = DEFAULT_TARGET_ALPHA;
     stabilizer->target_color = RGB(255, 100, 100);
     
-    WriteLog("Stabilizer initialized at position (%.1f, %.1f)", 
+    Settings_WriteLog("Stabilizer initialized at position (%.1f, %.1f)", 
              stabilizer->current_pos.x, stabilizer->current_pos.y);
 }
 
-float ApplyEasing(float t, EaseType ease_type) {
+float StabilizerCore_ApplyEasing(float t, EaseType ease_type) {
     if (t <= 0.0f) return 0.0f;
     if (t >= 1.0f) return 1.0f;
     
@@ -59,19 +59,19 @@ float ApplyEasing(float t, EaseType ease_type) {
     }
 }
 
-float CalculateDistance(MousePos a, MousePos b) {
+float StabilizerCore_CalculateDistance(MousePos a, MousePos b) {
     float dx = a.x - b.x;
     float dy = a.y - b.y;
     return sqrtf(dx * dx + dy * dy);
 }
 
-float CalculateVelocity(SmoothStabilizer* stabilizer, MousePos new_target) {
+float StabilizerCore_CalculateVelocity(SmoothStabilizer* stabilizer, MousePos new_target) {
     DWORD current_time = GetTickCount();
     float dt = (current_time - stabilizer->last_update_time) / 1000.0f;
     
     if (dt <= 0.001f) return stabilizer->velocity;
     
-    float distance = CalculateDistance(stabilizer->target_pos, new_target);
+    float distance = StabilizerCore_CalculateDistance(stabilizer->target_pos, new_target);
     float velocity = distance / dt;
     
     stabilizer->velocity = velocity * 0.7f + stabilizer->velocity * 0.3f;
@@ -80,10 +80,10 @@ float CalculateVelocity(SmoothStabilizer* stabilizer, MousePos new_target) {
     return stabilizer->velocity;
 }
 
-void UpdateSmoothPosition(SmoothStabilizer* stabilizer) {
+void StabilizerCore_UpdatePosition(SmoothStabilizer* stabilizer) {
     if (!stabilizer->enabled) return;
     
-    float distance = CalculateDistance(stabilizer->current_pos, stabilizer->target_pos);
+    float distance = StabilizerCore_CalculateDistance(stabilizer->current_pos, stabilizer->target_pos);
     
     if (distance < stabilizer->min_distance) {
         stabilizer->is_moving = false;
@@ -108,7 +108,7 @@ void UpdateSmoothPosition(SmoothStabilizer* stabilizer) {
         follow_factor = fminf(stabilizer->follow_strength * 3.0f, 0.8f);
     }
     
-    float eased_factor = ApplyEasing(follow_factor, stabilizer->ease_type);
+    float eased_factor = StabilizerCore_ApplyEasing(follow_factor, stabilizer->ease_type);
     
     float dx = stabilizer->target_pos.x - stabilizer->current_pos.x;
     float dy = stabilizer->target_pos.y - stabilizer->current_pos.y;
@@ -123,7 +123,7 @@ void UpdateSmoothPosition(SmoothStabilizer* stabilizer) {
     SetCursorPos(new_x, new_y);
 }
 
-void SetTargetPosition(SmoothStabilizer* stabilizer, float x, float y) {
+void StabilizerCore_SetTargetPosition(SmoothStabilizer* stabilizer, float x, float y) {
     if (!stabilizer->enabled) {
         SetCursorPos((int)x, (int)y);
         return;
@@ -140,13 +140,13 @@ void SetTargetPosition(SmoothStabilizer* stabilizer, float x, float y) {
     }
     
     MousePos new_target = {x, y};
-    CalculateVelocity(stabilizer, new_target);
+    StabilizerCore_CalculateVelocity(stabilizer, new_target);
     
     stabilizer->target_pos.x = x;
     stabilizer->target_pos.y = y;
 }
 
-void AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float dy) {
+void StabilizerCore_AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float dy) {
     if (!stabilizer->enabled) {
         return;
     }
@@ -178,5 +178,5 @@ void AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float dy) {
     stabilizer->target_pos.x = new_x;
     stabilizer->target_pos.y = new_y;
     
-    CalculateVelocity(stabilizer, stabilizer->target_pos);
+    StabilizerCore_CalculateVelocity(stabilizer, stabilizer->target_pos);
 }
