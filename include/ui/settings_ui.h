@@ -29,13 +29,14 @@
 #define IDC_TARGET_SIZE_EDIT    2010
 #define IDC_TARGET_ALPHA_SLIDER 2011
 #define IDC_TARGET_ALPHA_EDIT   2012
-#define IDC_ENABLE_CHECK        2013
-#define IDC_LOG_LEVEL_COMBO     2014
-#define IDC_PRESET_COMBO        2015
-#define IDC_APPLY_PRESET        2016
+#define IDC_POINTER_TYPE_COMBO  2013
+#define IDC_ENABLE_CHECK        2014
+#define IDC_LOG_LEVEL_COMBO     2015
+#define IDC_PRESET_COMBO        2016
+#define IDC_APPLY_PRESET        2017
 
 // Tooltip control ID
-#define IDC_TOOLTIP             2017
+#define IDC_TOOLTIP             2018
 
 // Tab indices
 #define TAB_BASIC       0

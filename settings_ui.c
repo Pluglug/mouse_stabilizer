@@ -367,6 +367,32 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     HWND parent = hwnd;
     HWND control;
     
+    // Pointer Type
+    control = CreateWindow("STATIC", "Pointer Type:", WS_CHILD,
+        x_label, y_pos + 5, LABEL_WIDTH, CONTROL_HEIGHT, parent, NULL, GetModuleHandle(NULL), NULL);
+    if (!control) {
+        LOG_ERROR("Failed to create Pointer Type label");
+        return false;
+    }
+    SettingsUI_ApplyFont(control);
+    
+    HWND pointer_combo = CreateWindow("COMBOBOX", NULL,
+        WS_CHILD | CBS_DROPDOWNLIST,
+        x_control, y_pos, CONTROL_WIDTH, 120, parent, (HMENU)IDC_POINTER_TYPE_COMBO,
+        GetModuleHandle(NULL), NULL);
+    if (!pointer_combo) {
+        LOG_ERROR("Failed to create Pointer Type combo");
+        return false;
+    }
+    SettingsUI_ApplyFont(pointer_combo);
+    SettingsUI_AddTooltip(pointer_combo, "Choose target pointer appearance");
+    
+    // Populate pointer type combo
+    ComboBox_AddString(pointer_combo, "Circle");
+    ComboBox_AddString(pointer_combo, "Cross");
+    
+    y_pos += CONTROL_SPACING;
+    
     // Target Distance
     control = CreateWindow("STATIC", "Target Distance:", WS_CHILD,
         x_label, y_pos + 5, LABEL_WIDTH, CONTROL_HEIGHT, parent, NULL, GetModuleHandle(NULL), NULL);
@@ -506,7 +532,7 @@ BOOL CALLBACK SettingsUI_ShowTabControls(HWND hwnd, LPARAM lParam) {
     // Determine if control should be visible for this tab
     if (tab == TAB_BASIC && ((id >= IDC_FOLLOW_SLIDER && id <= IDC_DUAL_CHECK) || id == IDC_ENABLE_CHECK)) {
         should_show = true;
-    } else if (tab == TAB_VISUAL && id >= IDC_TARGET_DIST_SLIDER && id <= IDC_TARGET_ALPHA_EDIT) {
+    } else if (tab == TAB_VISUAL && ((id >= IDC_TARGET_DIST_SLIDER && id <= IDC_TARGET_ALPHA_EDIT) || id == IDC_POINTER_TYPE_COMBO)) {
         should_show = true;
     } else if (tab == TAB_DEBUG && id >= IDC_LOG_LEVEL_COMBO) {
         should_show = true;
@@ -650,6 +676,15 @@ void SettingsUI_UpdateControls(void) {
         Button_SetCheck(check, g_stabilizer.dual_mode ? BST_CHECKED : BST_UNCHECKED);
     }
     
+    // Update Pointer Type
+    combo = GetDlgItem(g_settings_window, IDC_POINTER_TYPE_COMBO);
+    if (combo) {
+        ComboBox_SetCurSel(combo, g_stabilizer.pointer_type);
+        LOG_DEBUG("Pointer type combo updated: %d", g_stabilizer.pointer_type);
+    } else {
+        LOG_WARN("Pointer type combo not found");
+    }
+    
     // Update Log Level combo
     combo = GetDlgItem(g_settings_window, IDC_LOG_LEVEL_COMBO);
     if (combo) {
@@ -698,6 +733,21 @@ void SettingsUI_ApplySettings(void) {
         int sel = ComboBox_GetCurSel(combo);
         if (sel >= 0 && sel <= 3) {
             g_stabilizer.ease_type = (EaseType)sel;
+        }
+    }
+    
+    // Apply Pointer Type
+    combo = GetDlgItem(g_settings_window, IDC_POINTER_TYPE_COMBO);
+    if (combo) {
+        int sel = ComboBox_GetCurSel(combo);
+        if (sel >= 0 && sel <= 1) {
+            g_stabilizer.pointer_type = (PointerType)sel;
+            LOG_DEBUG("Pointer type changed to: %d", g_stabilizer.pointer_type);
+            // Force target window repaint
+            if (g_target_window) {
+                InvalidateRect(g_target_window, NULL, TRUE);
+                UpdateWindow(g_target_window);
+            }
         }
     }
     

@@ -19,6 +19,12 @@ typedef enum {
     EASE_IN_OUT
 } EaseType;
 
+// Pointer types for target visualization
+typedef enum {
+    POINTER_CIRCLE,
+    POINTER_CROSS
+} PointerType;
+
 // 2D position structure
 typedef struct {
     float x, y;
@@ -44,6 +50,7 @@ typedef struct {
     // Delay and visual feedback
     DWORD delay_start_ms;       // Delay before following starts
     float target_show_distance; // Distance threshold for showing target pointer
+    PointerType pointer_type;   // Target pointer type (circle or cross)
     int target_size;            // Target pointer size
     int target_alpha;           // Target pointer transparency
     COLORREF target_color;      // Target pointer color

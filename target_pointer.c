@@ -105,17 +105,26 @@ LRESULT CALLBACK TargetPointer_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
             
             int center_x = rect.right / 2;
             int center_y = rect.bottom / 2;
-            int radius = g_stabilizer.target_size;
+            int size = g_stabilizer.target_size;
             
             HBRUSH brush = CreateSolidBrush(g_stabilizer.target_color);
-            HPEN pen = CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
+            HPEN pen = CreatePen(PS_SOLID, 2, g_stabilizer.target_color);
             
             SelectObject(hdc, brush);
             SelectObject(hdc, pen);
             
-            Ellipse(hdc, 
-                   center_x - radius, center_y - radius,
-                   center_x + radius, center_y + radius);
+            if (g_stabilizer.pointer_type == POINTER_CIRCLE) {
+                // Draw circle pointer
+                Ellipse(hdc, 
+                       center_x - size, center_y - size,
+                       center_x + size, center_y + size);
+            } else if (g_stabilizer.pointer_type == POINTER_CROSS) {
+                // Draw cross pointer
+                MoveToEx(hdc, center_x - size, center_y, NULL);
+                LineTo(hdc, center_x + size, center_y);
+                MoveToEx(hdc, center_x, center_y - size, NULL);
+                LineTo(hdc, center_x, center_y + size);
+            }
             
             DeleteObject(brush);
             DeleteObject(pen);

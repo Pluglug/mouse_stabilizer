@@ -78,6 +78,8 @@ void Settings_Load(void) {
     g_stabilizer.target_show_distance = (float)GetPrivateProfileInt("Settings", "TargetShowDistance", 
                                                                     (int)(DEFAULT_TARGET_SHOW_DISTANCE * 10), 
                                                                     config_path) / 10.0f;
+    g_stabilizer.pointer_type = (PointerType)GetPrivateProfileInt("Settings", "PointerType", 
+                                                                  DEFAULT_POINTER_TYPE, config_path);
     g_stabilizer.target_size = GetPrivateProfileInt("Settings", "TargetSize", 
                                                     DEFAULT_TARGET_SIZE, config_path);
     g_stabilizer.target_alpha = GetPrivateProfileInt("Settings", "TargetAlpha", 
@@ -99,6 +101,9 @@ void Settings_Load(void) {
     if (g_stabilizer.delay_start_ms > 1000) g_stabilizer.delay_start_ms = 1000;
     if (g_stabilizer.target_show_distance < 1.0f) g_stabilizer.target_show_distance = 1.0f;
     if (g_stabilizer.target_show_distance > 50.0f) g_stabilizer.target_show_distance = 50.0f;
+    if (g_stabilizer.pointer_type < POINTER_CIRCLE || g_stabilizer.pointer_type > POINTER_CROSS) {
+        g_stabilizer.pointer_type = DEFAULT_POINTER_TYPE;
+    }
     if (g_stabilizer.target_size < 3) g_stabilizer.target_size = 3;
     if (g_stabilizer.target_size > 20) g_stabilizer.target_size = 20;
     if (g_stabilizer.target_alpha < 50) g_stabilizer.target_alpha = 50;
@@ -141,6 +146,9 @@ void Settings_Save(void) {
     
     sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.target_show_distance * 10));
     WritePrivateProfileString("Settings", "TargetShowDistance", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", (int)g_stabilizer.pointer_type);
+    WritePrivateProfileString("Settings", "PointerType", buffer, config_path);
     
     sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.target_size);
     WritePrivateProfileString("Settings", "TargetSize", buffer, config_path);
