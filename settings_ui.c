@@ -23,7 +23,11 @@ bool SettingsUI_Initialize(void) {
     wc.lpfnWndProc = SettingsUI_WindowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = class_name;
-    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    // Load application icon from resources, fallback to default if not found
+    wc.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
+    if (!wc.hIcon) {
+        wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    }
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
     wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -76,6 +80,18 @@ void SettingsUI_ShowWindow(void) {
         }
         
         LOG_DEBUG("Settings window created successfully, handle: %p", (void*)g_settings_window);
+        
+        // Set both large and small icons for the window
+        HICON hIconLarge = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
+        HICON hIconSmall = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1), 
+                                           IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+        
+        if (hIconLarge) {
+            SendMessage(g_settings_window, WM_SETICON, ICON_BIG, (LPARAM)hIconLarge);
+        }
+        if (hIconSmall) {
+            SendMessage(g_settings_window, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+        }
         
         if (!SettingsUI_CreateTabs(g_settings_window)) {
             LOG_ERROR("Failed to create tabs, destroying window");
