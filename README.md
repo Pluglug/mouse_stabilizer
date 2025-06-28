@@ -1,79 +1,102 @@
 # Mouse Stabilizer
 
-Windows application providing paint-style cursor smoothing for presentations and precise work. Reduces hand tremor effects while maintaining natural mouse control.
+Windows application inspired by paint tool stroke stabilization features. Reduces visual noise from mouse tremors during presentations and tutorial video creation. Perfect for those who are particular about smooth cursor movement on screen.
+
+![Image](https://github.com/user-attachments/assets/d0b93cd9-7414-4aa5-8502-c46b6a76f003)
 
 ## Features
 
+- **Tabbed Settings UI**: Right-click system tray > Settings... for configuration
 - **Paint-style Following**: Cursor smoothly follows target position like drawing software
-- **Configurable Easing**: Linear, Ease In, Ease Out, Ease In-Out smoothing curves  
-- **Visual Feedback**: Optional red target pointer shows actual mouse position
-- **Delay Start**: Configurable delay before smoothing begins (0-500ms)
+- **Follow Strength**: Configurable follow strength (0.05-1.0)
+- **Ease Types**: Multiple easing curves (Linear, Ease In, Ease Out, Ease In-Out)
+- **Delay Start**: Configurable delay start (0-500ms) before smoothing begins
 - **Dual Mode**: Adaptive smoothing that responds to movement velocity
+- **Target Cursor Types**: Circle or cross pointer shapes for visual feedback
+- **Target Size**: Adjustable target pointer size
+- **Transparency**: Configurable transparency levels
+- **OBS Hiding**: Screen capture exclusion for streaming/recording
+- **Always Visible Target**: Always visible mode or auto-hide based on distance
 - **Hotkey Toggle**: Ctrl+Alt+S to instantly enable/disable
-- **System Tray Control**: Right-click for real-time setting adjustments
-- **High Precision**: Raw Input API for low-latency processing
+- **System Tray Integration**: Complete control through system tray interface
 
 ## Quick Start
 
-1. **Compile**: `make` (requires MinGW or MSVC)
-2. **Run**: `mouse_stabilizer.exe`  
+1. **Run**: `mouse_stabilizer.exe`
+2. **Configure**: Right-click system tray > Settings...
 3. **Toggle**: Press `Ctrl+Alt+S` or right-click tray icon
-4. **Configure**: Right-click tray icon for settings menu
 
-## Build Methods
+## Settings
 
-### MinGW-w64 (Recommended)
-```bash
-make
-```
+Access all settings through **Right-click system tray > Settings...**
 
-### Visual Studio
-```bash
-cl main.c mouse_input.c smooth_engine.c hotkey.c tray_ui.c target_pointer.c config.c /Fe:mouse_stabilizer.exe user32.lib kernel32.lib shell32.lib gdi32.lib
-```
+### Basic Tab
+- **Follow Strength**: Controls smoothing intensity
+- **Ease Type**: Smoothing curve selection
+- **Delay Start**: Wait time before stabilization begins
+- **Dual Mode**: Velocity-responsive smoothing
 
-## Key Settings
+### Visual Tab  
+- **Target Cursor Type**: Circle or cross shapes
+- **Size**: Target pointer size adjustment
+- **Transparency**: Alpha blending control
+- **Hide from OBS**: Screen capture exclusion
+- **Always Visible**: Visibility mode control
 
-- **Follow Strength** (0.05-1.0): How quickly cursor follows target
-- **Ease Type**: Smoothing curve (Linear/Ease In/Out/In-Out)  
-- **Delay Start** (0-500ms): Wait time before following starts
-- **Dual Mode**: Enable faster following for quick movements
-- **Target Distance** (2-20px): Threshold for showing target pointer
-
-## Recommended Configurations
-
-- **Presentations**: Follow 0.1, Ease In-Out, Delay 150ms
-- **Drawing/Design**: Follow 0.15, Ease Out, Delay 100ms  
-- **General Use**: Follow 0.2, Linear, Delay 50ms
+### Debug Tab
+- Advanced logging and diagnostic options
 
 ## Technical Specifications
 
-- **Compatibility**: Windows 7+ (x86/x64)
+- **Compatibility**: Windows 10/11
 - **CPU Usage**: < 1%
-- **Memory Usage**: < 5MB  
-- **Latency**: < 8ms (configurable update interval)
-- **Architecture**: Modular C codebase with separated concerns
-
-## Generated Files
-
-- `mouse_stabilizer.ini` - Settings (auto-created)
-- `mouse_stabilizer.log` - Debug log (auto-created)
+- **Memory Usage**: < 5MB
+- **Latency**: < 8ms real-time processing
 
 ## Troubleshooting
 
-- **Admin Rights Required**: Run as administrator if UAC is enabled
-- **Hotkey Not Working**: Check for conflicts with other applications
-- **No Smoothing Effect**: Increase Follow Strength or decrease Delay
-- **Target Pointer Not Visible**: Decrease Target Distance threshold
+- **Settings not saving**: Ensure write permissions in application directory
+- **Target pointer not visible**: Check transparency settings or always visible mode
+- **OBS capture exclusion not working**: Try compatibility mode in Debug tab
+- **Stabilization feels delayed**: Reduce delay start time or increase follow strength
 
 ## Architecture
 
-- **Core Engine**: `smooth_engine.c` - Mathematical smoothing algorithms
-- **Input Processing**: `mouse_input.c` - Raw Input API handling
-- **UI Components**: `tray_ui.c`, `target_pointer.c` - User interface
-- **Configuration**: `config.c` - Settings persistence and logging
-- **Main Loop**: `main.c` - Application initialization and message loop
+Modular architecture with separated UI and core functionality:
+
+- **Settings UI** (`settings_ui.c`): Tabbed configuration interface
+- **Target Pointer** (`target_pointer.c`): Cross/circle visual feedback with capture exclusion
+- **Stabilizer Core** (`smooth_engine.c`): Real-time smoothing algorithms
+- **System Integration** (`tray_ui.c`, `hotkey.c`): Windows system tray and hotkey handling
+
+## Thank you Claude
+
+This application was created with the powerful support of Claude Code. Let's hear a word from him about the development process!
+
+> "I'm thrilled to have helped bring Mouse Stabilizer to life! From implementing the core smoothing algorithms to designing the tabbed settings interface, this project showcases how AI-assisted development can accelerate innovation. The attention to detail in features like OBS capture exclusion and real-time parameter tuning demonstrates what's possible when human creativity meets AI capabilities. Try Claude Code for your next project - whether you're building desktop applications, web services, or exploring new ideas, I'm here to help turn your vision into reality!" - Claude
+
+Ready to build something amazing? [Get started with Claude Code](https://claude.ai/code) and experience AI-powered development.
 
 ## License
 
-See source code for licensing information.
+MIT License
+
+Copyright (c) 2025 Mouse Stabilizer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
