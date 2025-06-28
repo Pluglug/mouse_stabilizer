@@ -38,9 +38,10 @@
 #define IDC_EXCLUDE_CAPTURE_CHECK 2019
 #define IDC_CAPTURE_COMPAT_CHECK  2020
 #define IDC_CAPTURE_STATUS_LABEL  2021
+#define IDC_TARGET_ALWAYS_VISIBLE_CHECK 2022
 
 // Tooltip control ID
-#define IDC_TOOLTIP             2022
+#define IDC_TOOLTIP             2023
 
 // Tab indices
 #define TAB_BASIC       0

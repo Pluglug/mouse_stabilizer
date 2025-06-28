@@ -439,6 +439,20 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     
     y_pos += CONTROL_SPACING;
     
+    // Target Always Visible
+    control = CreateWindow("BUTTON", "Always show target pointer",
+        WS_CHILD | BS_AUTOCHECKBOX,
+        x_label, y_pos, LABEL_WIDTH + CONTROL_WIDTH, CONTROL_HEIGHT, parent, (HMENU)IDC_TARGET_ALWAYS_VISIBLE_CHECK,
+        GetModuleHandle(NULL), NULL);
+    if (!control) {
+        LOG_ERROR("Failed to create Target Always Visible checkbox");
+        return false;
+    }
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Keep target pointer visible at all times (disable auto-hide based on distance)");
+    
+    y_pos += CONTROL_SPACING;
+    
     // Exclude from Capture
     control = CreateWindow("BUTTON", "Exclude from screen capture (OBS, etc.)",
         WS_CHILD | BS_AUTOCHECKBOX,
@@ -544,8 +558,8 @@ BOOL CALLBACK SettingsUI_ShowTabControls(HWND hwnd, LPARAM lParam) {
     if (tab == TAB_BASIC && ((id >= IDC_FOLLOW_SLIDER && id <= IDC_DUAL_CHECK) || id == IDC_ENABLE_CHECK)) {
         should_show = true;
     } else if (tab == TAB_VISUAL && ((id >= IDC_TARGET_COLOR_BUTTON && id <= IDC_TARGET_ALPHA_EDIT) || 
-                                     id == IDC_POINTER_TYPE_COMBO || id == IDC_EXCLUDE_CAPTURE_CHECK || 
-                                     id == IDC_CAPTURE_COMPAT_CHECK)) {
+                                     id == IDC_POINTER_TYPE_COMBO || id == IDC_TARGET_ALWAYS_VISIBLE_CHECK ||
+                                     id == IDC_EXCLUDE_CAPTURE_CHECK || id == IDC_CAPTURE_COMPAT_CHECK)) {
         should_show = true;
     } else if (tab == TAB_DEBUG && (id >= IDC_LOG_LEVEL_COMBO || id == IDC_CAPTURE_STATUS_LABEL)) {
         should_show = true;
@@ -728,6 +742,15 @@ void SettingsUI_UpdateControls(void) {
         LOG_WARN("Target alpha slider not found");
     }
     
+    // Update Target Always Visible checkbox
+    check = GetDlgItem(g_settings_window, IDC_TARGET_ALWAYS_VISIBLE_CHECK);
+    if (check) {
+        Button_SetCheck(check, g_stabilizer.target_always_visible ? BST_CHECKED : BST_UNCHECKED);
+        LOG_DEBUG("Target always visible checkbox updated: %s", g_stabilizer.target_always_visible ? "checked" : "unchecked");
+    } else {
+        LOG_WARN("Target always visible checkbox not found");
+    }
+    
     // Update Exclude from Capture checkbox
     check = GetDlgItem(g_settings_window, IDC_EXCLUDE_CAPTURE_CHECK);
     if (check) {
@@ -863,6 +886,16 @@ void SettingsUI_ApplySettings(void) {
             g_stabilizer.target_alpha = slider_value;
             LOG_DEBUG("Target alpha changed to: %d", g_stabilizer.target_alpha);
             TargetPointer_UpdateSettings();
+        }
+    }
+    
+    // Apply Target Always Visible
+    check = GetDlgItem(g_settings_window, IDC_TARGET_ALWAYS_VISIBLE_CHECK);
+    if (check) {
+        bool was_always_visible = g_stabilizer.target_always_visible;
+        g_stabilizer.target_always_visible = (Button_GetCheck(check) == BST_CHECKED);
+        if (was_always_visible != g_stabilizer.target_always_visible) {
+            LOG_DEBUG("Target always visible changed to: %s", g_stabilizer.target_always_visible ? "enabled" : "disabled");
         }
     }
     

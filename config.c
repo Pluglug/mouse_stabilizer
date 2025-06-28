@@ -97,6 +97,10 @@ void Settings_Load(void) {
     g_stabilizer.capture_compatibility_mode = GetPrivateProfileInt("Settings", "CaptureCompatibilityMode", 
                                                                    DEFAULT_CAPTURE_COMPATIBILITY_MODE ? 1 : 0, config_path) != 0;
     
+    // Load target visibility setting
+    g_stabilizer.target_always_visible = GetPrivateProfileInt("Settings", "TargetAlwaysVisible", 
+                                                              DEFAULT_TARGET_ALWAYS_VISIBLE ? 1 : 0, config_path) != 0;
+    
     if (g_stabilizer.follow_strength < 0.05f) g_stabilizer.follow_strength = 0.05f;
     if (g_stabilizer.follow_strength > 1.0f) g_stabilizer.follow_strength = 1.0f;
     if (g_stabilizer.min_distance < 0.1f) g_stabilizer.min_distance = 0.1f;
@@ -173,6 +177,9 @@ void Settings_Save(void) {
     
     sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.capture_compatibility_mode ? 1 : 0);
     WritePrivateProfileString("Settings", "CaptureCompatibilityMode", buffer, config_path);
+    
+    sprintf_s(buffer, sizeof(buffer), "%d", g_stabilizer.target_always_visible ? 1 : 0);
+    WritePrivateProfileString("Settings", "TargetAlwaysVisible", buffer, config_path);
     
     Settings_WriteLog("Settings saved");
 }

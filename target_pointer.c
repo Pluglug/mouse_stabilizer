@@ -60,17 +60,36 @@ bool TargetPointer_CreateWindow(void) {
 }
 
 void TargetPointer_UpdateWindow(void) {
-    if (!g_target_window || !g_stabilizer.enabled) return;
+    if (!g_target_window) return;
+    
+    // If stabilizer is disabled, force hide the target pointer
+    if (!g_stabilizer.enabled) {
+        if (g_target_visible) {
+            TargetPointer_Show(false);
+            LOG_DEBUG("Target pointer hidden because stabilizer is disabled");
+        }
+        return;
+    }
     
     DWORD current_time = GetTickCount();
     if (current_time - g_last_draw_time < DRAW_INTERVAL_MS) return;
     g_last_draw_time = current_time;
     
-    float distance = StabilizerCore_CalculateDistance(g_stabilizer.target_pos, g_stabilizer.current_pos);
-    bool should_show = distance >= g_stabilizer.target_show_distance;
+    bool should_show;
+    if (g_stabilizer.target_always_visible) {
+        // Always visible mode - show target pointer regardless of distance
+        should_show = true;
+    } else {
+        // Auto-hide mode - show only when target is far from current position
+        float distance = StabilizerCore_CalculateDistance(g_stabilizer.target_pos, g_stabilizer.current_pos);
+        should_show = distance >= g_stabilizer.target_show_distance;
+    }
     
     if (should_show != g_target_visible) {
         TargetPointer_Show(should_show);
+        LOG_DEBUG("Target pointer visibility changed to: %s (mode: %s)", 
+                  should_show ? "visible" : "hidden",
+                  g_stabilizer.target_always_visible ? "always visible" : "auto-hide");
     }
     
     if (g_target_visible) {

@@ -54,6 +54,7 @@ typedef struct {
     int target_size;            // Target pointer size
     int target_alpha;           // Target pointer transparency
     COLORREF target_color;      // Target pointer color
+    bool target_always_visible; // Always show target pointer (disable auto-hide)
     
     // Screen capture exclusion settings
     bool exclude_from_capture;      // Exclude target pointer from screen capture
