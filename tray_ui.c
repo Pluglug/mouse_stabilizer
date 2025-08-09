@@ -7,7 +7,18 @@ bool TrayUI_CreateIcon(HWND hwnd) {
     g_nid.uID = TRAY_ICON_ID;
     g_nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     g_nid.uCallbackMessage = WM_TRAYICON;
-    g_nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    // Load application icon from resources with proper size for system tray
+    // Try to load small icon (16x16) first for better appearance in system tray
+    g_nid.hIcon = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1), 
+                                   IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    if (!g_nid.hIcon) {
+        // Fallback to regular icon loading
+        g_nid.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
+        if (!g_nid.hIcon) {
+            LOG_WARN("Failed to load application icon, using default");
+            g_nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+        }
+    }
     strcpy_s(g_nid.szTip, sizeof(g_nid.szTip), "Mouse Stabilizer - Enabled");
     
     return Shell_NotifyIcon(NIM_ADD, &g_nid);

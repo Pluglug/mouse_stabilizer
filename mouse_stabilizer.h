@@ -3,6 +3,9 @@
 
 // Main application header - includes all subsystem headers
 
+// Resources
+#include "resource.h"
+
 // Core functionality
 #include "include/core/stabilizer_core.h"
 #include "include/core/mouse_input.h"

@@ -15,6 +15,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     (void)hPrevInstance;
     (void)lpCmdLine;
     (void)nCmdShow;
+    
+#ifndef DEBUG
+    // Hide console window in release builds
+    HWND console_window = GetConsoleWindow();
+    if (console_window != NULL) {
+        ShowWindow(console_window, SW_HIDE);
+    }
+#endif
     const char* class_name = "MouseStabilizerWindow";
     WNDCLASS wc = {0};
     MSG msg;
@@ -23,6 +31,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.lpfnWndProc = Hotkey_WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = class_name;
+    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1));
+    if (!wc.hIcon) {
+        wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    }
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     
