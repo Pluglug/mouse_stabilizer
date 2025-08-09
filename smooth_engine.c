@@ -215,14 +215,22 @@ void StabilizerCore_AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float 
     
     float new_x = stabilizer->target_pos.x + dx;
     float new_y = stabilizer->target_pos.y + dy;
-    
-    int screen_width = GetSystemMetrics(SM_CXSCREEN);
-    int screen_height = GetSystemMetrics(SM_CYSCREEN);
-    
-    if (new_x < 0) new_x = 0;
-    if (new_y < 0) new_y = 0;
-    if (new_x >= screen_width) new_x = screen_width - 1;
-    if (new_y >= screen_height) new_y = screen_height - 1;
+
+    // Use virtual screen metrics to support multi-monitor setups.
+    // Virtual screen can start at negative coordinates when a monitor is placed
+    // to the left/top of the primary monitor.
+    const int virtual_left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    const int virtual_top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    const int virtual_width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    const int virtual_height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    const int virtual_right = virtual_left + virtual_width - 1;
+    const int virtual_bottom = virtual_top + virtual_height - 1;
+
+    if (new_x < (float)virtual_left) new_x = (float)virtual_left;
+    if (new_y < (float)virtual_top) new_y = (float)virtual_top;
+    if (new_x > (float)virtual_right) new_x = (float)virtual_right;
+    if (new_y > (float)virtual_bottom) new_y = (float)virtual_bottom;
     
     
     stabilizer->target_pos.x = new_x;

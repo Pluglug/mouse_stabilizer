@@ -11,11 +11,61 @@
 
 #include "mouse_stabilizer.h"
 
+// Try to enable per-monitor DPI awareness to avoid coordinate mismatches
+static void EnableDpiAwareness(void) {
+    // 1) Try SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2)
+    typedef BOOL (WINAPI *SetProcessDpiAwarenessContextFunc)(void*);
+    HMODULE hUser32 = GetModuleHandleA("user32.dll");
+    if (hUser32) {
+        SetProcessDpiAwarenessContextFunc SetProcessDpiAwarenessContextPtr =
+            (SetProcessDpiAwarenessContextFunc)GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+        if (SetProcessDpiAwarenessContextPtr) {
+            // DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = (void*)-4
+            if (SetProcessDpiAwarenessContextPtr((void*)-4)) {
+                return; // Success
+            }
+            // Fallback: PER_MONITOR_AWARE = (void*)-3
+            if (SetProcessDpiAwarenessContextPtr((void*)-3)) {
+                return; // Success
+            }
+        }
+    }
+
+    // 2) Try SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE = 2)
+    typedef HRESULT (WINAPI *SetProcessDpiAwarenessFunc)(int);
+    HMODULE hShcore = LoadLibraryA("shcore.dll");
+    if (hShcore) {
+        SetProcessDpiAwarenessFunc SetProcessDpiAwarenessPtr =
+            (SetProcessDpiAwarenessFunc)GetProcAddress(hShcore, "SetProcessDpiAwareness");
+        if (SetProcessDpiAwarenessPtr) {
+            if (SetProcessDpiAwarenessPtr(2) == S_OK) {
+                FreeLibrary(hShcore);
+                return; // Success
+            }
+        }
+        FreeLibrary(hShcore);
+    }
+
+    // 3) Fallback to SetProcessDPIAware (system DPI aware)
+    typedef BOOL (WINAPI *SetProcessDPIAwareFunc)(void);
+    if (hUser32) {
+        SetProcessDPIAwareFunc SetProcessDPIAwarePtr =
+            (SetProcessDPIAwareFunc)GetProcAddress(hUser32, "SetProcessDPIAware");
+        if (SetProcessDPIAwarePtr) {
+            SetProcessDPIAwarePtr();
+        }
+    }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     (void)hPrevInstance;
     (void)lpCmdLine;
     (void)nCmdShow;
     
+#if defined(_WIN32)
+    EnableDpiAwareness();
+#endif
+
 #ifndef DEBUG
     // Hide console window in release builds
     HWND console_window = GetConsoleWindow();
