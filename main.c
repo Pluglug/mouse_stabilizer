@@ -13,6 +13,11 @@
 
 // Try to enable per-monitor DPI awareness to avoid coordinate mismatches
 static void EnableDpiAwareness(void) {
+    // Suppress function pointer cast warnings for dynamic API loading
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
     // 1) Try SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2)
     typedef BOOL (WINAPI *SetProcessDpiAwarenessContextFunc)(void*);
     HMODULE hUser32 = GetModuleHandleA("user32.dll");
@@ -55,6 +60,10 @@ static void EnableDpiAwareness(void) {
             SetProcessDPIAwarePtr();
         }
     }
+    // Restore diagnostics
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {

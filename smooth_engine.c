@@ -14,6 +14,35 @@ HWND g_target_window = NULL;          // Overlay window for target pointer
 NOTIFYICONDATA g_nid = {0};          // System tray icon data
 bool g_running = true;                // Application running flag
 
+// Helper: get virtual desktop rectangle (supports multi-monitor and negative origins)
+static void GetVirtualScreenRect(RECT* outRect) {
+    if (!outRect) return;
+    const int left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    const int top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    const int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    const int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+    outRect->left = left;
+    outRect->top = top;
+    outRect->right = left + width - 1;
+    outRect->bottom = top + height - 1;
+}
+
+static void ClampPointToRectF(float* x, float* y, const RECT* rect) {
+    if (!x || !y || !rect) return;
+    if (*x < (float)rect->left) *x = (float)rect->left;
+    if (*y < (float)rect->top) *y = (float)rect->top;
+    if (*x > (float)rect->right) *x = (float)rect->right;
+    if (*y > (float)rect->bottom) *y = (float)rect->bottom;
+}
+
+static void ClampPointToRectI(int* x, int* y, const RECT* rect) {
+    if (!x || !y || !rect) return;
+    if (*x < rect->left) *x = rect->left;
+    if (*y < rect->top) *y = rect->top;
+    if (*x > rect->right) *x = rect->right;
+    if (*y > rect->bottom) *y = rect->bottom;
+}
+
 void StabilizerCore_Initialize(SmoothStabilizer* stabilizer) {
     if (!stabilizer) {
         LOG_ERROR("StabilizerCore_Initialize: null stabilizer parameter");
@@ -152,6 +181,11 @@ void StabilizerCore_UpdatePosition(SmoothStabilizer* stabilizer) {
     
     int new_x = (int)(stabilizer->current_pos.x + 0.5f);
     int new_y = (int)(stabilizer->current_pos.y + 0.5f);
+
+    // Ensure final cursor position stays within virtual screen bounds
+    RECT virtualRect;
+    GetVirtualScreenRect(&virtualRect);
+    ClampPointToRectI(&new_x, &new_y, &virtualRect);
     
     LOG_TRACE("Moving cursor to (%d, %d)", new_x, new_y);
     
@@ -198,7 +232,7 @@ void StabilizerCore_AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float 
         return;
     }
     
-    LOG_DEBUG("Processing mouse delta: dx=%.1f, dy=%.1f", dx, dy);
+    LOG_TRACE("Processing mouse delta: dx=%.1f, dy=%.1f", dx, dy);
     
     
     // Initialize positions on first update
@@ -216,21 +250,10 @@ void StabilizerCore_AddMouseDelta(SmoothStabilizer* stabilizer, float dx, float 
     float new_x = stabilizer->target_pos.x + dx;
     float new_y = stabilizer->target_pos.y + dy;
 
-    // Use virtual screen metrics to support multi-monitor setups.
-    // Virtual screen can start at negative coordinates when a monitor is placed
-    // to the left/top of the primary monitor.
-    const int virtual_left = GetSystemMetrics(SM_XVIRTUALSCREEN);
-    const int virtual_top = GetSystemMetrics(SM_YVIRTUALSCREEN);
-    const int virtual_width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    const int virtual_height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
-    const int virtual_right = virtual_left + virtual_width - 1;
-    const int virtual_bottom = virtual_top + virtual_height - 1;
-
-    if (new_x < (float)virtual_left) new_x = (float)virtual_left;
-    if (new_y < (float)virtual_top) new_y = (float)virtual_top;
-    if (new_x > (float)virtual_right) new_x = (float)virtual_right;
-    if (new_y > (float)virtual_bottom) new_y = (float)virtual_bottom;
+    // Clamp using virtual screen rect (multi-monitor, negative origins supported)
+    RECT virtualRect;
+    GetVirtualScreenRect(&virtualRect);
+    ClampPointToRectF(&new_x, &new_y, &virtualRect);
     
     
     stabilizer->target_pos.x = new_x;

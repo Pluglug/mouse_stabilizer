@@ -9,6 +9,43 @@ void Hotkey_ToggleStabilizer(void) {
 
 LRESULT CALLBACK Hotkey_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
+        case WM_DISPLAYCHANGE:
+            {
+                RECT vr;
+                int left = GetSystemMetrics(SM_XVIRTUALSCREEN);
+                int top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+                int width = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+                int height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+                vr.left = left;
+                vr.top = top;
+                vr.right = left + width - 1;
+                vr.bottom = top + height - 1;
+
+                if (g_stabilizer.target_pos.x < (float)vr.left) g_stabilizer.target_pos.x = (float)vr.left;
+                if (g_stabilizer.target_pos.y < (float)vr.top) g_stabilizer.target_pos.y = (float)vr.top;
+                if (g_stabilizer.target_pos.x > (float)vr.right) g_stabilizer.target_pos.x = (float)vr.right;
+                if (g_stabilizer.target_pos.y > (float)vr.bottom) g_stabilizer.target_pos.y = (float)vr.bottom;
+
+                if (g_stabilizer.current_pos.x < (float)vr.left) g_stabilizer.current_pos.x = (float)vr.left;
+                if (g_stabilizer.current_pos.y < (float)vr.top) g_stabilizer.current_pos.y = (float)vr.top;
+                if (g_stabilizer.current_pos.x > (float)vr.right) g_stabilizer.current_pos.x = (float)vr.right;
+                if (g_stabilizer.current_pos.y > (float)vr.bottom) g_stabilizer.current_pos.y = (float)vr.bottom;
+
+                SetCursorPos((int)(g_stabilizer.current_pos.x + 0.5f), (int)(g_stabilizer.current_pos.y + 0.5f));
+                TargetPointer_UpdateWindow();
+            }
+            return 0;
+
+        case WM_DPICHANGED:
+            if (g_target_window) {
+                RECT* prcNewWindow = (RECT*)lParam;
+                SetWindowPos(g_target_window, NULL,
+                             prcNewWindow->left, prcNewWindow->top,
+                             prcNewWindow->right - prcNewWindow->left,
+                             prcNewWindow->bottom - prcNewWindow->top,
+                             SWP_NOZORDER | SWP_NOACTIVATE);
+            }
+            return 0;
         case WM_HOTKEY:
             if (wParam == HOTKEY_ID) {
                 Hotkey_ToggleStabilizer();
