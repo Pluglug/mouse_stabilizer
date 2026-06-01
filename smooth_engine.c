@@ -36,6 +36,10 @@ void StabilizerCore_Initialize(SmoothStabilizer* stabilizer) {
     stabilizer->follow_strength = DEFAULT_FOLLOW_STRENGTH;
     stabilizer->min_distance = DEFAULT_MIN_DISTANCE;
     stabilizer->ease_type = EASE_OUT;
+    for (int i = 0; i < 4; i++) {
+        stabilizer->ease_follow_strength[i] = DEFAULT_FOLLOW_STRENGTH;
+        stabilizer->ease_delay_start_ms[i] = DEFAULT_DELAY_START_MS;
+    }
     stabilizer->dual_mode = true;
     stabilizer->enabled = true;
     

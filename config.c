@@ -32,15 +32,73 @@ static void Settings_ValidateCurrent(void) {
     if (g_stabilizer.target_size > 20) g_stabilizer.target_size = 20;
     if (g_stabilizer.target_alpha < 50) g_stabilizer.target_alpha = 50;
     if (g_stabilizer.target_alpha > 255) g_stabilizer.target_alpha = 255;
+    for (int i = 0; i < 4; i++) {
+        if (g_stabilizer.ease_follow_strength[i] < 0.05f) g_stabilizer.ease_follow_strength[i] = 0.05f;
+        if (g_stabilizer.ease_follow_strength[i] > 1.0f) g_stabilizer.ease_follow_strength[i] = 1.0f;
+        if (g_stabilizer.ease_delay_start_ms[i] > 1000) g_stabilizer.ease_delay_start_ms[i] = 1000;
+    }
     if (g_log_level < LOG_ERROR || g_log_level > LOG_TRACE) g_log_level = LOG_INFO;
+}
+
+static void Settings_InitializeEaseMemory(float follow_strength, DWORD delay_start_ms) {
+    for (int i = 0; i < 4; i++) {
+        g_stabilizer.ease_follow_strength[i] = follow_strength;
+        g_stabilizer.ease_delay_start_ms[i] = delay_start_ms;
+    }
+}
+
+static void Settings_LoadEaseMemory(const char* section, const char* config_path) {
+    char key[64];
+    
+    for (int i = 0; i < 4; i++) {
+        sprintf_s(key, sizeof(key), "Ease%dFollowStrength", i);
+        g_stabilizer.ease_follow_strength[i] =
+            (float)GetPrivateProfileInt(section, key, (int)(g_stabilizer.ease_follow_strength[i] * 100), config_path) / 100.0f;
+        
+        sprintf_s(key, sizeof(key), "Ease%dDelayStartMs", i);
+        g_stabilizer.ease_delay_start_ms[i] =
+            (DWORD)GetPrivateProfileInt(section, key, (int)g_stabilizer.ease_delay_start_ms[i], config_path);
+    }
+}
+
+static void Settings_WriteEaseMemory(const char* section, const char* config_path, const float follow_values[4], const unsigned long delay_values[4]) {
+    char key[64];
+    char buffer[32];
+    
+    for (int i = 0; i < 4; i++) {
+        sprintf_s(key, sizeof(key), "Ease%dFollowStrength", i);
+        sprintf_s(buffer, sizeof(buffer), "%d", (int)(follow_values[i] * 100));
+        WritePrivateProfileString(section, key, buffer, config_path);
+        
+        sprintf_s(key, sizeof(key), "Ease%dDelayStartMs", i);
+        sprintf_s(buffer, sizeof(buffer), "%lu", delay_values[i]);
+        WritePrivateProfileString(section, key, buffer, config_path);
+    }
+}
+
+static void Settings_ApplyStoredEaseValues(void) {
+    int ease = (int)g_stabilizer.ease_type;
+    if (ease < 0 || ease > 3) {
+        ease = EASE_OUT;
+        g_stabilizer.ease_type = EASE_OUT;
+    }
+    
+    g_stabilizer.follow_strength = g_stabilizer.ease_follow_strength[ease];
+    g_stabilizer.delay_start_ms = g_stabilizer.ease_delay_start_ms[ease];
+    Settings_ValidateCurrent();
 }
 
 static void Settings_CopyCurrentToProfile(StabilizerProfile* profile, const char* name) {
     if (!profile) return;
+    Settings_RememberCurrentEaseValues();
     if (name && name[0] != '\0') {
         strcpy_s(profile->name, sizeof(profile->name), name);
     }
     profile->follow_strength = g_stabilizer.follow_strength;
+    for (int i = 0; i < 4; i++) {
+        profile->ease_follow_strength[i] = g_stabilizer.ease_follow_strength[i];
+        profile->ease_delay_start_ms[i] = (unsigned long)g_stabilizer.ease_delay_start_ms[i];
+    }
     profile->min_distance = g_stabilizer.min_distance;
     profile->ease_type = (int)g_stabilizer.ease_type;
     profile->dual_mode = g_stabilizer.dual_mode;
@@ -59,6 +117,10 @@ static void Settings_CopyCurrentToProfile(StabilizerProfile* profile, const char
 static void Settings_CopyProfileToCurrent(const StabilizerProfile* profile) {
     if (!profile) return;
     g_stabilizer.follow_strength = profile->follow_strength;
+    for (int i = 0; i < 4; i++) {
+        g_stabilizer.ease_follow_strength[i] = profile->ease_follow_strength[i];
+        g_stabilizer.ease_delay_start_ms[i] = (DWORD)profile->ease_delay_start_ms[i];
+    }
     g_stabilizer.min_distance = profile->min_distance;
     g_stabilizer.ease_type = (EaseType)profile->ease_type;
     g_stabilizer.dual_mode = profile->dual_mode;
@@ -73,6 +135,8 @@ static void Settings_CopyProfileToCurrent(const StabilizerProfile* profile) {
     g_stabilizer.exclude_from_capture = profile->exclude_from_capture;
     g_stabilizer.capture_compatibility_mode = profile->capture_compatibility_mode;
     Settings_ValidateCurrent();
+    g_stabilizer.ease_follow_strength[(int)g_stabilizer.ease_type] = g_stabilizer.follow_strength;
+    g_stabilizer.ease_delay_start_ms[(int)g_stabilizer.ease_type] = g_stabilizer.delay_start_ms;
 }
 
 static bool Settings_IsBlankName(const char* name) {
@@ -113,11 +177,23 @@ static void Settings_LoadProfiles(const char* config_path) {
         }
         
         g_profiles[i].follow_strength = (float)GetPrivateProfileInt(section, "FollowStrength", (int)(DEFAULT_FOLLOW_STRENGTH * 100), config_path) / 100.0f;
+        for (int ease = 0; ease < 4; ease++) {
+            char key[64];
+            sprintf_s(key, sizeof(key), "Ease%dFollowStrength", ease);
+            g_profiles[i].ease_follow_strength[ease] =
+                (float)GetPrivateProfileInt(section, key, (int)(g_profiles[i].follow_strength * 100), config_path) / 100.0f;
+        }
         g_profiles[i].min_distance = (float)GetPrivateProfileInt(section, "MinDistance", (int)(DEFAULT_MIN_DISTANCE * 10), config_path) / 10.0f;
         g_profiles[i].ease_type = GetPrivateProfileInt(section, "EaseType", EASE_OUT, config_path);
         g_profiles[i].dual_mode = GetPrivateProfileInt(section, "DualMode", 1, config_path) != 0;
         g_profiles[i].enabled = GetPrivateProfileInt(section, "Enabled", 1, config_path) != 0;
         g_profiles[i].delay_start_ms = (unsigned long)GetPrivateProfileInt(section, "DelayStartMs", DEFAULT_DELAY_START_MS, config_path);
+        for (int ease = 0; ease < 4; ease++) {
+            char key[64];
+            sprintf_s(key, sizeof(key), "Ease%dDelayStartMs", ease);
+            g_profiles[i].ease_delay_start_ms[ease] =
+                (unsigned long)GetPrivateProfileInt(section, key, (int)g_profiles[i].delay_start_ms, config_path);
+        }
         g_profiles[i].target_show_distance = (float)GetPrivateProfileInt(section, "TargetShowDistance", (int)(DEFAULT_TARGET_SHOW_DISTANCE * 10), config_path) / 10.0f;
         g_profiles[i].pointer_type = GetPrivateProfileInt(section, "PointerType", DEFAULT_POINTER_TYPE, config_path);
         g_profiles[i].target_size = GetPrivateProfileInt(section, "TargetSize", DEFAULT_TARGET_SIZE, config_path);
@@ -150,6 +226,7 @@ static void Settings_SaveProfiles(const char* config_path) {
         
         sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_profiles[i].follow_strength * 100));
         WritePrivateProfileString(section, "FollowStrength", buffer, config_path);
+        Settings_WriteEaseMemory(section, config_path, g_profiles[i].ease_follow_strength, g_profiles[i].ease_delay_start_ms);
         sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_profiles[i].min_distance * 10));
         WritePrivateProfileString(section, "MinDistance", buffer, config_path);
         sprintf_s(buffer, sizeof(buffer), "%d", g_profiles[i].ease_type);
@@ -274,6 +351,9 @@ void Settings_Load(void) {
                                                               DEFAULT_TARGET_ALWAYS_VISIBLE ? 1 : 0, config_path) != 0;
     
     Settings_ValidateCurrent();
+    Settings_InitializeEaseMemory(g_stabilizer.follow_strength, g_stabilizer.delay_start_ms);
+    Settings_LoadEaseMemory("Settings", config_path);
+    Settings_ApplyStoredEaseValues();
     Settings_LoadProfiles(config_path);
     
     Settings_WriteLog("Settings loaded - Follow: %.2f, Ease: %d, Dual: %s, Delay: %dms, TargetDist: %.1f, Enabled: %s, Profiles: %d",
@@ -287,9 +367,11 @@ void Settings_Save(void) {
     Settings_GetConfigPath(config_path, sizeof(config_path));
     
     char buffer[32];
+    Settings_RememberCurrentEaseValues();
     
     sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.follow_strength * 100));
     WritePrivateProfileString("Settings", "FollowStrength", buffer, config_path);
+    Settings_WriteEaseMemory("Settings", config_path, g_stabilizer.ease_follow_strength, g_stabilizer.ease_delay_start_ms);
     
     sprintf_s(buffer, sizeof(buffer), "%d", (int)(g_stabilizer.min_distance * 10));
     WritePrivateProfileString("Settings", "MinDistance", buffer, config_path);
@@ -443,6 +525,29 @@ bool Settings_DeleteCurrentProfile(void) {
     g_current_profile_index = -1;
     Settings_Save();
     LOG_INFO("Deleted profile: %s", deleted_name);
+    return true;
+}
+
+void Settings_RememberCurrentEaseValues(void) {
+    int ease = (int)g_stabilizer.ease_type;
+    if (ease < 0 || ease > 3) return;
+    
+    g_stabilizer.ease_follow_strength[ease] = g_stabilizer.follow_strength;
+    g_stabilizer.ease_delay_start_ms[ease] = g_stabilizer.delay_start_ms;
+}
+
+bool Settings_SwitchEaseType(int ease_type) {
+    if (ease_type < 0 || ease_type > 3) {
+        return false;
+    }
+    
+    Settings_RememberCurrentEaseValues();
+    g_stabilizer.ease_type = (EaseType)ease_type;
+    g_stabilizer.follow_strength = g_stabilizer.ease_follow_strength[ease_type];
+    g_stabilizer.delay_start_ms = g_stabilizer.ease_delay_start_ms[ease_type];
+    Settings_ValidateCurrent();
+    LOG_DEBUG("Switched ease type to %d with follow %.2f and delay %lums",
+              ease_type, g_stabilizer.follow_strength, (unsigned long)g_stabilizer.delay_start_ms);
     return true;
 }
 

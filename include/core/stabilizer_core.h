@@ -37,6 +37,8 @@ typedef struct {
     float follow_strength;      // How quickly cursor follows target (0.05-1.0)
     float min_distance;         // Minimum distance to trigger movement
     EaseType ease_type;         // Easing function type
+    float ease_follow_strength[4]; // Per-ease follow strengths for quick comparison
+    DWORD ease_delay_start_ms[4];  // Per-ease delay starts for quick comparison
     bool dual_mode;             // Enable velocity-based adaptive following
     bool enabled;               // Whether stabilizer is active
     

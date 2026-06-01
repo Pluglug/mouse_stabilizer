@@ -800,6 +800,14 @@ LRESULT CALLBACK SettingsUI_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
                 break;
             }
             
+            if (id == IDC_EASE_COMBO && code == CBN_SELCHANGE && !g_updating_controls) {
+                SettingsUI_ApplySettings();
+                Settings_Save();
+                SettingsUI_UpdateControls();
+                TrayUI_UpdateIcon();
+                break;
+            }
+            
             if (id == IDC_PROFILE_NAME_EDIT) {
                 break;
             }
@@ -1077,6 +1085,15 @@ void SettingsUI_ApplySettings(void) {
         }
     }
     
+    int selected_ease = (int)g_stabilizer.ease_type;
+    HWND combo = GetDlgItem(g_settings_window, IDC_EASE_COMBO);
+    if (combo) {
+        int sel = ComboBox_GetCurSel(combo);
+        if (sel >= 0 && sel <= 3) {
+            selected_ease = sel;
+        }
+    }
+    
     // Apply Follow Strength from slider only
     HWND follow_slider = GetDlgItem(g_settings_window, IDC_FOLLOW_SLIDER);
     if (follow_slider) {
@@ -1088,13 +1105,20 @@ void SettingsUI_ApplySettings(void) {
         }
     }
     
-    // Apply Ease Type
-    HWND combo = GetDlgItem(g_settings_window, IDC_EASE_COMBO);
-    if (combo) {
-        int sel = ComboBox_GetCurSel(combo);
-        if (sel >= 0 && sel <= 3) {
-            g_stabilizer.ease_type = (EaseType)sel;
+    // Apply Delay from slider only
+    HWND delay_slider = GetDlgItem(g_settings_window, IDC_DELAY_SLIDER);
+    if (delay_slider) {
+        DWORD slider_value = (DWORD)SendMessage(delay_slider, TBM_GETPOS, 0, 0);
+        if (slider_value <= 500 && slider_value != g_stabilizer.delay_start_ms) {
+            g_stabilizer.delay_start_ms = slider_value;
+            LOG_DEBUG("Delay start changed to: %lums", (unsigned long)g_stabilizer.delay_start_ms);
         }
+    }
+    
+    if (selected_ease != (int)g_stabilizer.ease_type) {
+        Settings_SwitchEaseType(selected_ease);
+    } else {
+        Settings_RememberCurrentEaseValues();
     }
     
     // Apply Pointer Type
@@ -1105,16 +1129,6 @@ void SettingsUI_ApplySettings(void) {
             g_stabilizer.pointer_type = (PointerType)sel;
             LOG_DEBUG("Pointer type changed to: %d", g_stabilizer.pointer_type);
             TargetPointer_UpdateSettings();
-        }
-    }
-    
-    // Apply Delay from slider only
-    HWND delay_slider = GetDlgItem(g_settings_window, IDC_DELAY_SLIDER);
-    if (delay_slider) {
-        DWORD slider_value = (DWORD)SendMessage(delay_slider, TBM_GETPOS, 0, 0);
-        if (slider_value <= 500 && slider_value != g_stabilizer.delay_start_ms) {
-            g_stabilizer.delay_start_ms = slider_value;
-            LOG_DEBUG("Delay start changed to: %lums", (unsigned long)g_stabilizer.delay_start_ms);
         }
     }
     

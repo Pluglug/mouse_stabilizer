@@ -42,11 +42,13 @@ typedef enum {
 typedef struct {
     char name[PROFILE_NAME_MAX];
     float follow_strength;
+    float ease_follow_strength[4];
     float min_distance;
     int ease_type;
     bool dual_mode;
     bool enabled;
     unsigned long delay_start_ms;
+    unsigned long ease_delay_start_ms[4];
     float target_show_distance;
     int pointer_type;
     int target_size;
@@ -74,6 +76,8 @@ bool Settings_SaveCurrentAsProfile(const char* name);
 bool Settings_UpdateCurrentProfile(void);
 bool Settings_RenameCurrentProfile(const char* name);
 bool Settings_DeleteCurrentProfile(void);
+void Settings_RememberCurrentEaseValues(void);
+bool Settings_SwitchEaseType(int ease_type);
 
 // Enhanced logging functions
 void Settings_WriteLog(const char* format, ...);
