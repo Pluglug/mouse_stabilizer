@@ -28,6 +28,11 @@
 #define WM_DRAW_TIMER (WM_USER + 3)
 #define TIMER_ID 1
 #define DRAW_TIMER_ID 2
+#define MENU_TOGGLE_STABILIZER 1001
+#define MENU_SHOW_SETTINGS 1002
+#define MENU_TOGGLE_DEBUG 1003
+#define MENU_EXIT_APP 1004
+#define MENU_PROFILE_BASE 1100
 
 // Global tray icon data
 extern NOTIFYICONDATA g_nid;

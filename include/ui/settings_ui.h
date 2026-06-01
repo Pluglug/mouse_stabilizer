@@ -6,8 +6,8 @@
 #include <stdbool.h>
 
 // Settings window constants
-#define SETTINGS_WINDOW_WIDTH 480
-#define SETTINGS_WINDOW_HEIGHT 520
+#define SETTINGS_WINDOW_WIDTH 560
+#define SETTINGS_WINDOW_HEIGHT 620
 #define CONTROL_HEIGHT 28
 #define CONTROL_SPACING 45
 #define TAB_HEIGHT 35
@@ -42,6 +42,11 @@
 
 // Tooltip control ID
 #define IDC_TOOLTIP             2023
+#define IDC_PROFILE_NAME_EDIT   2024
+#define IDC_PROFILE_SAVE_AS     2025
+#define IDC_PROFILE_UPDATE      2026
+#define IDC_PROFILE_RENAME      2027
+#define IDC_PROFILE_DELETE      2028
 
 // Tab indices
 #define TAB_BASIC       0

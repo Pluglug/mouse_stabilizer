@@ -16,6 +16,56 @@ static HWND g_tab_control = NULL;
 static int g_current_tab = 0;
 static bool g_updating_controls = false;  // Flag to prevent feedback loops
 
+#define TAB_PROP_NAME "MouseStabilizerTab"
+
+static void SettingsUI_RegisterTabControl(HWND control, int tab_index) {
+    if (control) {
+        SetPropA(control, TAB_PROP_NAME, (HANDLE)(INT_PTR)(tab_index + 1));
+    }
+}
+
+static void SettingsUI_SetControlText(int control_id, const char* text) {
+    HWND control = GetDlgItem(g_settings_window, control_id);
+    if (control) {
+        SetWindowText(control, text);
+    }
+}
+
+static void SettingsUI_UpdateValueLabels(void) {
+    char text[64];
+    
+    sprintf_s(text, sizeof(text), "%.2f", g_stabilizer.follow_strength);
+    SettingsUI_SetControlText(IDC_FOLLOW_EDIT, text);
+    
+    sprintf_s(text, sizeof(text), "%lums", (unsigned long)g_stabilizer.delay_start_ms);
+    SettingsUI_SetControlText(IDC_DELAY_EDIT, text);
+    
+    sprintf_s(text, sizeof(text), "%dpx", g_stabilizer.target_size);
+    SettingsUI_SetControlText(IDC_TARGET_SIZE_EDIT, text);
+    
+    sprintf_s(text, sizeof(text), "%d", g_stabilizer.target_alpha);
+    SettingsUI_SetControlText(IDC_TARGET_ALPHA_EDIT, text);
+}
+
+static int SettingsUI_GetSelectedProfileIndex(void) {
+    HWND combo = GetDlgItem(g_settings_window, IDC_PRESET_COMBO);
+    if (!combo) return -1;
+    return ComboBox_GetCurSel(combo);
+}
+
+static bool SettingsUI_GetProfileNameInput(char* name, size_t name_size) {
+    HWND name_edit = GetDlgItem(g_settings_window, IDC_PROFILE_NAME_EDIT);
+    if (!name_edit) return false;
+    GetWindowText(name_edit, name, (int)name_size);
+    return name[0] != '\0';
+}
+
+static void SettingsUI_AfterProfileChange(void) {
+    TargetPointer_UpdateSettings();
+    TrayUI_UpdateIcon();
+    SettingsUI_UpdateControls();
+}
+
 bool SettingsUI_Initialize(void) {
     const char* class_name = "MouseStabilizerSettings";
     WNDCLASS wc = {0};
@@ -250,8 +300,87 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     int y_pos = 55;
     int x_label = 30;
     int x_control = x_label + LABEL_WIDTH + 10;
+    int x_value = x_control + CONTROL_WIDTH + 15;
     HWND parent = hwnd;
     HWND control;
+    HWND combo;
+    
+    // Named profiles
+    control = CreateWindow("STATIC", "Profile:", WS_CHILD | WS_VISIBLE,
+        x_label, y_pos + 5, LABEL_WIDTH, CONTROL_HEIGHT, parent, NULL, GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    combo = CreateWindow("COMBOBOX", NULL,
+        WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST,
+        x_control, y_pos, CONTROL_WIDTH + 60, 180, parent, (HMENU)IDC_PRESET_COMBO,
+        GetModuleHandle(NULL), NULL);
+    if (!combo) return false;
+    SettingsUI_ApplyFont(combo);
+    SettingsUI_AddTooltip(combo, "Choose a saved profile");
+    SettingsUI_RegisterTabControl(combo, TAB_BASIC);
+    
+    control = CreateWindow("BUTTON", "Load", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        x_control + CONTROL_WIDTH + 70, y_pos, 75, CONTROL_HEIGHT, parent, (HMENU)IDC_APPLY_PRESET,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Apply the selected profile");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    y_pos += CONTROL_SPACING;
+    
+    control = CreateWindow("STATIC", "Profile Name:", WS_CHILD | WS_VISIBLE,
+        x_label, y_pos + 5, LABEL_WIDTH, CONTROL_HEIGHT, parent, NULL, GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    control = CreateWindow("EDIT", "",
+        WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL,
+        x_control, y_pos, CONTROL_WIDTH + 60, CONTROL_HEIGHT, parent, (HMENU)IDC_PROFILE_NAME_EDIT,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Name to save or rename the current settings profile");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    control = CreateWindow("BUTTON", "Save As", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        x_control + CONTROL_WIDTH + 70, y_pos, 75, CONTROL_HEIGHT, parent, (HMENU)IDC_PROFILE_SAVE_AS,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Save current settings as this profile name");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    y_pos += CONTROL_SPACING;
+    
+    control = CreateWindow("BUTTON", "Update Profile", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        x_control, y_pos, 115, CONTROL_HEIGHT, parent, (HMENU)IDC_PROFILE_UPDATE,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Overwrite the selected profile with current settings");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    control = CreateWindow("BUTTON", "Rename", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        x_control + 125, y_pos, 85, CONTROL_HEIGHT, parent, (HMENU)IDC_PROFILE_RENAME,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Rename the selected profile to the profile name field");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    control = CreateWindow("BUTTON", "Delete", WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        x_control + 220, y_pos, 85, CONTROL_HEIGHT, parent, (HMENU)IDC_PROFILE_DELETE,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_AddTooltip(control, "Delete the selected profile");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    y_pos += CONTROL_SPACING + 5;
     
     // Enable/Disable Stabilizer - Prominent at top
     control = CreateWindow("BUTTON", "Enable Mouse Stabilizer",
@@ -264,6 +393,7 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(control);
     SettingsUI_AddTooltip(control, "Toggle mouse stabilization on/off");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
     
     y_pos += 50;
     
@@ -275,6 +405,7 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
     
     control = CreateWindow(TRACKBAR_CLASS, NULL,
         WS_CHILD | WS_VISIBLE | TBS_HORZ | TBS_TOOLTIPS | TBS_ENABLESELRANGE,
@@ -285,6 +416,14 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
         return false;
     }
     SettingsUI_AddTooltip(control, "Controls how quickly the cursor follows the target (0.05-1.0)");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    control = CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE | SS_LEFT,
+        x_value, y_pos + 5, EDIT_WIDTH, CONTROL_HEIGHT, parent, (HMENU)IDC_FOLLOW_EDIT,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
     
     
     y_pos += CONTROL_SPACING;
@@ -297,6 +436,7 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
     
     HWND ease_combo = CreateWindow("COMBOBOX", NULL,
         WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST,
@@ -308,6 +448,7 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(ease_combo);
     SettingsUI_AddTooltip(ease_combo, "Animation curve for cursor movement");
+    SettingsUI_RegisterTabControl(ease_combo, TAB_BASIC);
     
     // Populate ease combo
     ComboBox_AddString(ease_combo, "Linear");
@@ -325,6 +466,7 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
     
     control = CreateWindow(TRACKBAR_CLASS, NULL,
         WS_CHILD | WS_VISIBLE | TBS_HORZ | TBS_TOOLTIPS | TBS_ENABLESELRANGE,
@@ -335,6 +477,14 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
         return false;
     }
     SettingsUI_AddTooltip(control, "Delay before stabilization starts (0-500ms)");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
+    
+    control = CreateWindow("STATIC", "", WS_CHILD | WS_VISIBLE | SS_LEFT,
+        x_value, y_pos + 5, EDIT_WIDTH + 20, CONTROL_HEIGHT, parent, (HMENU)IDC_DELAY_EDIT,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
     
     
     y_pos += CONTROL_SPACING;
@@ -350,6 +500,7 @@ bool SettingsUI_CreateBasicTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(control);
     SettingsUI_AddTooltip(control, "Adapt stabilization based on mouse movement velocity");
+    SettingsUI_RegisterTabControl(control, TAB_BASIC);
     
     LOG_DEBUG("Basic tab controls created successfully");
     return true;
@@ -362,6 +513,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     int y_pos = 55;
     int x_label = 30;
     int x_control = x_label + LABEL_WIDTH + 10;
+    int x_value = x_control + CONTROL_WIDTH + 15;
     HWND parent = hwnd;
     HWND control;
     
@@ -373,6 +525,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     HWND pointer_combo = CreateWindow("COMBOBOX", NULL,
         WS_CHILD | CBS_DROPDOWNLIST,
@@ -384,6 +537,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(pointer_combo);
     SettingsUI_AddTooltip(pointer_combo, "Choose target pointer appearance");
+    SettingsUI_RegisterTabControl(pointer_combo, TAB_VISUAL);
     
     // Populate pointer type combo
     ComboBox_AddString(pointer_combo, "Circle");
@@ -399,6 +553,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     control = CreateWindow("BUTTON", "Choose Color...", WS_CHILD | BS_PUSHBUTTON,
         x_control, y_pos, 120, CONTROL_HEIGHT, parent, (HMENU)IDC_TARGET_COLOR_BUTTON,
@@ -409,6 +564,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(control);
     SettingsUI_AddTooltip(control, "Click to choose target pointer color");
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     y_pos += CONTROL_SPACING;
     
@@ -420,6 +576,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     control = CreateWindow(TRACKBAR_CLASS, NULL,
         WS_CHILD | TBS_HORZ | TBS_TOOLTIPS | TBS_ENABLESELRANGE,
@@ -430,6 +587,14 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
         return false;
     }
     SettingsUI_AddTooltip(control, "Size of the target pointer (3-20 pixels)");
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
+    
+    control = CreateWindow("STATIC", "", WS_CHILD | SS_LEFT,
+        x_value, y_pos + 5, EDIT_WIDTH + 20, CONTROL_HEIGHT, parent, (HMENU)IDC_TARGET_SIZE_EDIT,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     
     y_pos += CONTROL_SPACING;
@@ -442,6 +607,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     control = CreateWindow(TRACKBAR_CLASS, NULL,
         WS_CHILD | TBS_HORZ | TBS_TOOLTIPS | TBS_ENABLESELRANGE,
@@ -452,6 +618,14 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
         return false;
     }
     SettingsUI_AddTooltip(control, "Transparency of target pointer (50-255)");
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
+    
+    control = CreateWindow("STATIC", "", WS_CHILD | SS_LEFT,
+        x_value, y_pos + 5, EDIT_WIDTH + 20, CONTROL_HEIGHT, parent, (HMENU)IDC_TARGET_ALPHA_EDIT,
+        GetModuleHandle(NULL), NULL);
+    if (!control) return false;
+    SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     y_pos += CONTROL_SPACING;
     
@@ -466,6 +640,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(control);
     SettingsUI_AddTooltip(control, "Keep target pointer visible at all times (disable auto-hide based on distance)");
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     y_pos += CONTROL_SPACING;
     
@@ -480,6 +655,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(control);
     SettingsUI_AddTooltip(control, "Hide target pointer from screen recording software");
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     y_pos += CONTROL_SPACING;
     
@@ -494,6 +670,7 @@ bool SettingsUI_CreateVisualTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(control);
     SettingsUI_AddTooltip(control, "Use additional methods for older capture software compatibility");
+    SettingsUI_RegisterTabControl(control, TAB_VISUAL);
     
     LOG_DEBUG("Visual tab controls created successfully");
     return true;
@@ -516,6 +693,7 @@ bool SettingsUI_CreateDebugTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_DEBUG);
     
     HWND log_combo = CreateWindow("COMBOBOX", NULL,
         WS_CHILD | CBS_DROPDOWNLIST,
@@ -527,6 +705,7 @@ bool SettingsUI_CreateDebugTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(log_combo);
     SettingsUI_AddTooltip(log_combo, "Set logging verbosity level");
+    SettingsUI_RegisterTabControl(log_combo, TAB_DEBUG);
     
     // Populate log level combo
     ComboBox_AddString(log_combo, "ERROR");
@@ -545,6 +724,7 @@ bool SettingsUI_CreateDebugTab(HWND hwnd) {
         return false;
     }
     SettingsUI_ApplyFont(control);
+    SettingsUI_RegisterTabControl(control, TAB_DEBUG);
     
     control = CreateWindow("STATIC", "Unknown", WS_CHILD | SS_LEFT,
         x_control, y_pos + 5, CONTROL_WIDTH * 2, CONTROL_HEIGHT, parent, (HMENU)IDC_CAPTURE_STATUS_LABEL,
@@ -555,6 +735,7 @@ bool SettingsUI_CreateDebugTab(HWND hwnd) {
     }
     SettingsUI_ApplyFont(control);
     SettingsUI_AddTooltip(control, "Current status of screen capture exclusion");
+    SettingsUI_RegisterTabControl(control, TAB_DEBUG);
     
     LOG_DEBUG("Debug tab controls created successfully");
     return true;
@@ -567,19 +748,9 @@ BOOL CALLBACK SettingsUI_ShowTabControls(HWND hwnd, LPARAM lParam) {
     }
     
     int tab = (int)lParam;
-    int id = GetDlgCtrlID(hwnd);
-    bool should_show = false;
-    
-    // Determine if control should be visible for this tab
-    if (tab == TAB_BASIC && ((id >= IDC_FOLLOW_SLIDER && id <= IDC_DUAL_CHECK) || id == IDC_ENABLE_CHECK)) {
-        should_show = true;
-    } else if (tab == TAB_VISUAL && ((id >= IDC_TARGET_COLOR_BUTTON && id <= IDC_TARGET_ALPHA_EDIT) || 
-                                     id == IDC_POINTER_TYPE_COMBO || id == IDC_TARGET_ALWAYS_VISIBLE_CHECK ||
-                                     id == IDC_EXCLUDE_CAPTURE_CHECK || id == IDC_CAPTURE_COMPAT_CHECK)) {
-        should_show = true;
-    } else if (tab == TAB_DEBUG && (id >= IDC_LOG_LEVEL_COMBO || id == IDC_CAPTURE_STATUS_LABEL)) {
-        should_show = true;
-    }
+    HANDLE prop = GetPropA(hwnd, TAB_PROP_NAME);
+    int control_tab = prop ? ((int)(INT_PTR)prop - 1) : -1;
+    bool should_show = (control_tab == tab);
     
     ShowWindow(hwnd, should_show ? SW_SHOW : SW_HIDE);
     return TRUE;
@@ -621,6 +792,56 @@ LRESULT CALLBACK SettingsUI_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
             int code = HIWORD(wParam);
             int id = LOWORD(wParam);
             
+            if (id == IDC_PRESET_COMBO && code == CBN_SELCHANGE && !g_updating_controls) {
+                int index = SettingsUI_GetSelectedProfileIndex();
+                if (Settings_ApplyProfile(index)) {
+                    SettingsUI_AfterProfileChange();
+                }
+                break;
+            }
+            
+            if (id == IDC_PROFILE_NAME_EDIT) {
+                break;
+            }
+            
+            if (code == BN_CLICKED && (id == IDC_APPLY_PRESET || id == IDC_PROFILE_SAVE_AS ||
+                                       id == IDC_PROFILE_UPDATE || id == IDC_PROFILE_RENAME ||
+                                       id == IDC_PROFILE_DELETE)) {
+                char profile_name[PROFILE_NAME_MAX] = {0};
+                bool ok = false;
+                bool cancelled = false;
+                
+                if (id == IDC_APPLY_PRESET) {
+                    ok = Settings_ApplyProfile(SettingsUI_GetSelectedProfileIndex());
+                } else if (id == IDC_PROFILE_SAVE_AS) {
+                    SettingsUI_ApplySettings();
+                    if (SettingsUI_GetProfileNameInput(profile_name, sizeof(profile_name))) {
+                        ok = Settings_SaveCurrentAsProfile(profile_name);
+                    }
+                } else if (id == IDC_PROFILE_UPDATE) {
+                    SettingsUI_ApplySettings();
+                    ok = Settings_UpdateCurrentProfile();
+                } else if (id == IDC_PROFILE_RENAME) {
+                    if (SettingsUI_GetProfileNameInput(profile_name, sizeof(profile_name))) {
+                        ok = Settings_RenameCurrentProfile(profile_name);
+                    }
+                } else if (id == IDC_PROFILE_DELETE) {
+                    if (MessageBox(g_settings_window, "Delete the selected profile?", "Mouse Stabilizer",
+                                   MB_YESNO | MB_ICONQUESTION) == IDYES) {
+                        ok = Settings_DeleteCurrentProfile();
+                    } else {
+                        cancelled = true;
+                    }
+                }
+                
+                if (!ok && !cancelled) {
+                    MessageBox(g_settings_window, "Profile operation failed. Check the profile name or selection.",
+                               "Mouse Stabilizer", MB_OK | MB_ICONWARNING);
+                }
+                SettingsUI_AfterProfileChange();
+                break;
+            }
+            
             // Handle color picker button
             if (id == IDC_TARGET_COLOR_BUTTON && code == BN_CLICKED) {
                 CHOOSECOLOR cc = {0};
@@ -649,6 +870,8 @@ LRESULT CALLBACK SettingsUI_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
                 LOG_DEBUG("Control change detected, applying settings");
                 SettingsUI_ApplySettings();
                 Settings_Save();
+                SettingsUI_UpdateValueLabels();
+                TrayUI_UpdateIcon();
             } else if (g_updating_controls) {
                 LOG_DEBUG("Control change ignored during control update");
             }
@@ -661,6 +884,7 @@ LRESULT CALLBACK SettingsUI_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPAR
                 LOG_DEBUG("Slider change detected, applying settings");
                 SettingsUI_ApplySettings();
                 Settings_Save();
+                SettingsUI_UpdateValueLabels();
             } else {
                 LOG_DEBUG("Slider change ignored during control update");
             }
@@ -688,6 +912,21 @@ void SettingsUI_UpdateControls(void) {
     g_updating_controls = true;
     LOG_DEBUG("Updating controls with current settings");
     
+    HWND combo = GetDlgItem(g_settings_window, IDC_PRESET_COMBO);
+    if (combo) {
+        ComboBox_ResetContent(combo);
+        for (int i = 0; i < Settings_GetProfileCount(); i++) {
+            ComboBox_AddString(combo, Settings_GetProfileName(i));
+        }
+        ComboBox_SetCurSel(combo, Settings_GetCurrentProfileIndex());
+    }
+    
+    HWND profile_name = GetDlgItem(g_settings_window, IDC_PROFILE_NAME_EDIT);
+    if (profile_name) {
+        const char* name = Settings_GetCurrentProfileName();
+        SetWindowText(profile_name, name[0] ? name : "");
+    }
+    
     // Update Enable checkbox
     HWND enable_check = GetDlgItem(g_settings_window, IDC_ENABLE_CHECK);
     if (enable_check) {
@@ -709,7 +948,7 @@ void SettingsUI_UpdateControls(void) {
     
     
     // Update Ease Type
-    HWND combo = GetDlgItem(g_settings_window, IDC_EASE_COMBO);
+    combo = GetDlgItem(g_settings_window, IDC_EASE_COMBO);
     if (combo) {
         ComboBox_SetCurSel(combo, g_stabilizer.ease_type);
     }
@@ -816,6 +1055,8 @@ void SettingsUI_UpdateControls(void) {
     } else {
         LOG_WARN("Capture status label not found");
     }
+    
+    SettingsUI_UpdateValueLabels();
     
     LOG_DEBUG("Settings controls updated");
     g_updating_controls = false;

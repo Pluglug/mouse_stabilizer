@@ -4,6 +4,7 @@ void Hotkey_ToggleStabilizer(void) {
     g_stabilizer.enabled = !g_stabilizer.enabled;
     
     Settings_WriteLog("Mouse stabilizer %s", g_stabilizer.enabled ? "enabled" : "disabled");
+    Settings_Save();
     TrayUI_UpdateIcon();
 }
 
@@ -40,17 +41,29 @@ LRESULT CALLBACK Hotkey_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             
         case WM_COMMAND:
             LOG_DEBUG("WM_COMMAND received, wParam: %lu", (unsigned long)wParam);
+            {
+                int command_id = LOWORD(wParam);
+                if (command_id >= MENU_PROFILE_BASE && command_id < MENU_PROFILE_BASE + MAX_PROFILES) {
+                    int profile_index = command_id - MENU_PROFILE_BASE;
+                    if (Settings_ApplyProfile(profile_index)) {
+                        TargetPointer_UpdateSettings();
+                        SettingsUI_UpdateControls();
+                        TrayUI_UpdateIcon();
+                    }
+                    return 0;
+                }
+            }
             switch (LOWORD(wParam)) {
-                case 1001:  // Toggle Stabilizer
+                case MENU_TOGGLE_STABILIZER:  // Toggle Stabilizer
                     LOG_DEBUG("Toggle Stabilizer command received");
                     Hotkey_ToggleStabilizer();
                     break;
-                case 1002:  // Settings Window
+                case MENU_SHOW_SETTINGS:  // Settings Window
                     LOG_DEBUG("Settings Window command received");
                     SettingsUI_ShowWindow();
                     LOG_DEBUG("SettingsUI_ShowWindow call completed");
                     break;
-                case 1003:  // Debug Mode Toggle
+                case MENU_TOGGLE_DEBUG:  // Debug Mode Toggle
                     {
                         LogLevel current = Settings_GetLogLevel();
                         LogLevel next = (LogLevel)((current + 1) % (LOG_TRACE + 1));
@@ -58,7 +71,7 @@ LRESULT CALLBACK Hotkey_WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
                         Settings_Save();
                     }
                     break;
-                case 1004:  // Exit
+                case MENU_EXIT_APP:  // Exit
                     g_running = false;
                     PostQuitMessage(0);
                     break;

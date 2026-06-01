@@ -2,6 +2,7 @@
 #define SETTINGS_H
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -18,6 +19,9 @@
         strncpy(dest, src, (size)-1); \
         *((dest) + (size) - 1) = '\0'; \
     } while(0)
+    #define strcat_s(dest, size, src) do { \
+        strncat(dest, src, (size) - strlen(dest) - 1); \
+    } while(0)
     // For MinGW/non-MSVC compilers on Windows, use standard functions
     #define localtime_s(timeptr, timer) do { *(timeptr) = *localtime(timer); } while(0)
     #define fopen_s(pFile, filename, mode) ((*(pFile) = fopen(filename, mode)) ? 0 : 1)
@@ -32,12 +36,44 @@ typedef enum {
     LOG_TRACE       // Very detailed trace information
 } LogLevel;
 
+#define MAX_PROFILES 16
+#define PROFILE_NAME_MAX 64
+
+typedef struct {
+    char name[PROFILE_NAME_MAX];
+    float follow_strength;
+    float min_distance;
+    int ease_type;
+    bool dual_mode;
+    bool enabled;
+    unsigned long delay_start_ms;
+    float target_show_distance;
+    int pointer_type;
+    int target_size;
+    int target_alpha;
+    unsigned long target_color;
+    bool target_always_visible;
+    bool exclude_from_capture;
+    bool capture_compatibility_mode;
+} StabilizerProfile;
+
 // Global log level setting
 extern LogLevel g_log_level;
 
 // Settings management functions
 void Settings_Load(void);
 void Settings_Save(void);
+
+// Named profile management
+int Settings_GetProfileCount(void);
+int Settings_GetCurrentProfileIndex(void);
+const char* Settings_GetProfileName(int index);
+const char* Settings_GetCurrentProfileName(void);
+bool Settings_ApplyProfile(int index);
+bool Settings_SaveCurrentAsProfile(const char* name);
+bool Settings_UpdateCurrentProfile(void);
+bool Settings_RenameCurrentProfile(const char* name);
+bool Settings_DeleteCurrentProfile(void);
 
 // Enhanced logging functions
 void Settings_WriteLog(const char* format, ...);
