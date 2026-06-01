@@ -8,6 +8,7 @@
 *.lib
 *.exp
 *.ilk
+macos/build/
 
 # Runtime files
 *.log

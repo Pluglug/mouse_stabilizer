@@ -26,6 +26,17 @@ Windows application inspired by paint tool stroke stabilization features. Reduce
 2. **Configure**: Right-click system tray > Settings...
 3. **Toggle**: Press `Ctrl+Alt+S` or right-click tray icon
 
+## macOS Preview
+
+An experimental native macOS menu bar app lives in `macos/`.
+
+```bash
+make -C macos
+open macos/build/MouseStabilizerMac.app
+```
+
+macOS requires Accessibility permission for global pointer filtering. If stabilization does not start, enable Mouse Stabilizer in **System Settings > Privacy & Security > Accessibility**, then restart the app.
+
 ## Settings
 
 Access all settings through **Right-click system tray > Settings...**
