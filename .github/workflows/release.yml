@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows x64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install MinGW
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64 zip
+
+      - name: Build release executable
+        run: |
+          make clean
+          make release \
+            CC=x86_64-w64-mingw32-gcc \
+            RC=x86_64-w64-mingw32-windres \
+            STRIP=x86_64-w64-mingw32-strip
+
+      - name: Package artifact
+        run: |
+          mkdir -p dist
+          cp mouse_stabilizer.exe dist/
+          cp README.md dist/
+          cd dist
+          zip "mouse-stabilizer-windows-x64-${GITHUB_REF_NAME}.zip" mouse_stabilizer.exe README.md
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          asset="dist/mouse-stabilizer-windows-x64-${GITHUB_REF_NAME}.zip"
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" "$asset" --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" "$asset" \
+              --title "${GITHUB_REF_NAME}" \
+              --generate-notes
+          fi

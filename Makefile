@@ -1,5 +1,6 @@
 CC = gcc
 RC = windres
+STRIP = strip
 CFLAGS = -Wall -Wextra -O2 -std=c99 -I.
 LIBS = -luser32 -lkernel32 -lshell32 -lgdi32 -lcomctl32 -lcomdlg32
 LDFLAGS = -mwindows
@@ -34,7 +35,7 @@ debug: $(TARGET)
 
 release: CFLAGS += -DNDEBUG
 release: $(TARGET)
-	strip $(TARGET)
+	$(STRIP) $(TARGET)
 
 help:
 	@echo "Available targets:"

@@ -69,6 +69,15 @@ Modular architecture with separated UI and core functionality:
 - **Stabilizer Core** (`smooth_engine.c`): Real-time smoothing algorithms
 - **System Integration** (`tray_ui.c`, `hotkey.c`): Windows system tray and hotkey handling
 
+## Release
+
+Pushing a `v*` tag builds the Windows x64 executable in GitHub Actions and attaches a zip file to the matching GitHub Release.
+
+```bash
+git tag v2.0.1
+git push origin v2.0.1
+```
+
 ## Thank you Claude
 
 This application was created with the powerful support of Claude Code. Let's hear a word from him about the development process!
